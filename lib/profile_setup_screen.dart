@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
+import 'models/user.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -13,7 +14,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final TextEditingController gymController = TextEditingController();
 
   String selectedGoal = 'Muscle Gain';
-  String selectedGym = 'Western Rec Centre';
   String selectedFrequency = '3-4 times/week';
 
   @override
@@ -33,22 +33,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
             const SizedBox(height: 16),
 
-            // Goal dropdown
-            DropdownButtonFormField<String>(
-              value: selectedGym,
-              decoration: const InputDecoration(labelText: "Fitness Goal"),
-              items: const [
-                DropdownMenuItem(
-                  value: 'Western Rec Centre',
-                  child: Text('Western Rec Centre'),
-                ),
-              ],
-              onChanged: (value) {
-                setState(() {
-                  selectedGym = value!;
-                });
-              },
+            // Gym
+            TextField(
+              controller: gymController,
+              decoration: const InputDecoration(labelText: "Gym"),
             ),
+
             const SizedBox(height: 16),
 
             // Goal dropdown
@@ -108,17 +98,16 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
             ElevatedButton(
               onPressed: () {
-                // For now, just print values
-                debugPrint("Name: ${nameController.text}");
-                debugPrint("Gym: ${gymController.text}");
-                debugPrint("Goal: $selectedGoal");
-                debugPrint("Frequency: $selectedFrequency");
+                currentUser = User(
+                  name: nameController.text,
+                  gym: gymController.text,
+                  goal: selectedGoal,
+                  frequency: selectedFrequency,
+                );
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const HomeScreen()),
                 );
-
-                // Later: navigate to swipe screen
               },
               child: const Text("Continue"),
             ),

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'models/user.dart';
+import 'services/mock_data.dart';
 
 class SwipeScreen extends StatefulWidget {
   const SwipeScreen({super.key});
@@ -8,18 +10,11 @@ class SwipeScreen extends StatefulWidget {
 }
 
 class _SwipeScreenState extends State<SwipeScreen> {
-  // 🔥 Fake users (mock data for now)
-  final List<Map<String, String>> users = [
-    {"name": "Alex", "gym": "GoodLife", "goal": "Muscle Gain"},
-    {"name": "Jordan", "gym": "Fit4Less", "goal": "Weight Loss"},
-    {"name": "Taylor", "gym": "YMCA", "goal": "Cardio"},
-  ];
-
   int currentIndex = 0;
 
   void nextUser() {
     setState(() {
-      if (currentIndex < users.length - 1) {
+      if (currentIndex < mockProfiles.length - 1) {
         currentIndex++;
       } else {
         currentIndex = 0; // loop back for now
@@ -27,9 +22,14 @@ class _SwipeScreenState extends State<SwipeScreen> {
     });
   }
 
+  void likeUser() {
+    matches.add(mockProfiles[currentIndex]);
+    nextUser();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final user = users[currentIndex];
+    final user = mockProfiles[currentIndex];
 
     return Scaffold(
       appBar: AppBar(title: const Text("Find Gym Buddies")),
@@ -91,7 +91,7 @@ class _SwipeScreenState extends State<SwipeScreen> {
                               shape: const CircleBorder(),
                               padding: const EdgeInsets.all(20),
                             ),
-                            onPressed: nextUser,
+                            onPressed: likeUser,
                             child: const Icon(Icons.favorite, size: 30),
                           ),
                         ],

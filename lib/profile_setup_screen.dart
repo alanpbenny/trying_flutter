@@ -19,12 +19,22 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Create Profile")),
+      appBar: AppBar(title: const Text("Please fill in basic information")),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            const Text(
+              "So we can match you with the right gym buddy",
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: Color.fromARGB(255, 83, 81, 81),
+              ),
+            ),
+
+            const SizedBox(height: 24),
             // Name
             TextField(
               controller: nameController,
@@ -36,7 +46,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             // Goal dropdown
             DropdownButtonFormField<String>(
               value: selectedGym,
-              decoration: const InputDecoration(labelText: "Fitness Goal"),
+              decoration: const InputDecoration(labelText: "Gym name"),
               items: const [
                 DropdownMenuItem(
                   value: 'Western Rec Centre',

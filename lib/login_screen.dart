@@ -7,25 +7,27 @@ class LoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(32),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const Spacer(),
+
               // App Title
               const Text(
-                "Gym Buddy",
+                "Spottr",
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 32,
+                  fontSize: 42,
                   fontWeight: FontWeight.bold,
                 ),
               ),
 
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
 
               const Text(
                 "Find your workout partner",
@@ -36,64 +38,52 @@ class LoginScreen extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 40),
+              const Spacer(),
 
-              // Email Field
-              TextField(
-                decoration: InputDecoration(
-                  labelText: "Email",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+              // Google Sign-In Button
+              ElevatedButton.icon(
+                onPressed: () {
+                  // TEMP: navigate directly
+                  // Later this will be Google Sign-In
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ProfileSetupScreen(),
+                    ),
+                  );
+                },
+                icon: Image.asset(
+                  'assets/google_logo.png',
+                  height: 20,
                 ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Password Field
-              TextField(
-                obscureText: true,
-                decoration: InputDecoration(
-                  labelText: "Password",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                label: const Text(
+                  "Continue with Google",
+                  style: TextStyle(fontSize: 16),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black,
+                  elevation: 2,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    side: const BorderSide(color: Colors.grey),
                   ),
                 ),
               ),
 
               const SizedBox(height: 24),
 
-              // Login Button
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ProfileSetupScreen(),
-                  ),
-                );
-                },
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  "Log In",
-                  style: TextStyle(fontSize: 16),
+              const Text(
+                "By continuing, you agree to our Terms & Privacy Policy",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey,
                 ),
               ),
 
               const SizedBox(height: 16),
-
-              // Create Account
-              TextButton(
-                onPressed: () {
-                  // Navigate to sign up later
-                },
-                child: const Text("Create an account"),
-              ),
             ],
           ),
         ),

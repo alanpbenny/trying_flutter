@@ -32,7 +32,12 @@ class _SwipeScreenState extends State<SwipeScreen> {
     final user = users[currentIndex];
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Find Gym Buddies")),
+      backgroundColor: Colors.grey[100],
+
+      appBar: AppBar(title: const Text("Find Gym Buddies"),
+        centerTitle: true
+      ),
+   
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -41,62 +46,106 @@ class _SwipeScreenState extends State<SwipeScreen> {
 
             // 🔥 Profile Card
             Expanded(
-              child: Card(
-                elevation: 6,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+              child: Dismissible(
+                key: ValueKey(user["name"]),
+                direction: DismissDirection.horizontal,
+                onDismissed: (direction) {
+                  if (direction == DismissDirection.startToEnd) {
+                    debugPrint("Liked ${user["name"]}");
+                  } else {
+                    debugPrint("Passed ${user["name"]}");
+                  }
+                  nextUser();
+                },
+                background: Container(
+                  alignment: Alignment.centerLeft,
+                  padding: const EdgeInsets.only(left: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.green,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Icon(
+                    Icons.favorite,
+                    color: Colors.white,
+                    size: 40,
+                  ),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // 🔹 Profile Info
-                      Column(
-                        children: [
-                          const Icon(Icons.person, size: 100),
-                          const SizedBox(height: 20),
-
-                          Text(
-                            user["name"]!,
-                            style: const TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.bold,
+                secondaryBackground: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Icon(Icons.close, color: Colors.white, size: 40),
+                ),
+                child: Card(
+                  elevation: 8,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // 👤 Profile info
+                        Column(
+                          children: [
+                            CircleAvatar(
+                              radius: 60,
+                              backgroundColor: Colors.grey[300],
+                              child: const Icon(Icons.person, size: 60),
                             ),
-                          ),
+                            const SizedBox(height: 20),
 
-                          const SizedBox(height: 8),
-
-                          Text("Gym: ${user["gym"]}"),
-                          Text("Goal: ${user["goal"]}"),
-                        ],
-                      ),
-
-                      // 🔹 Buttons INSIDE card
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
-                              shape: const CircleBorder(),
-                              padding: const EdgeInsets.all(20),
+                            Text(
+                              user["name"]!,
+                              style: const TextStyle(
+                                fontSize: 26,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                            onPressed: nextUser,
-                            child: const Icon(Icons.close, size: 30),
-                          ),
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              shape: const CircleBorder(),
-                              padding: const EdgeInsets.all(20),
+
+                            const SizedBox(height: 8),
+
+                            Text(
+                              "Gym: ${user["gym"]}",
+                              style: const TextStyle(fontSize: 16),
                             ),
-                            onPressed: nextUser,
-                            child: const Icon(Icons.favorite, size: 30),
-                          ),
-                        ],
-                      ),
-                    ],
+                            Text(
+                              "Goal: ${user["goal"]}",
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                          ],
+                        ),
+
+                        // ❤️ / ❌ Buttons
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                shape: const CircleBorder(),
+                                padding: const EdgeInsets.all(18),
+                              ),
+                              onPressed: nextUser,
+                              child: const Icon(Icons.close, size: 28),
+                            ),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                shape: const CircleBorder(),
+                                padding: const EdgeInsets.all(18),
+                              ),
+                              onPressed: nextUser,
+                              child: const Icon(Icons.favorite, size: 28),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

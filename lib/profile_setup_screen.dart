@@ -100,12 +100,16 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             Center(
               child: Stack(
                 children: [
-                  CircleAvatar(
-                    radius: 100,
-                    backgroundColor: Colors.grey[300],
+                  Container(
+                    width: 200,
+                    height: 200,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     child: const Icon(
                       Icons.person,
-                      size: 60,
+                      size: 80,
                       color: Colors.white,
                     ),
                   ),
@@ -153,6 +157,29 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             TextField(
               controller: nameController,
               decoration: const InputDecoration(labelText: "Name"),
+            ),
+
+            const SizedBox(height: 16),
+
+            // DOB Picker
+            GestureDetector(
+              onTap: pickDOB,
+              child: InputDecorator(
+                decoration: const InputDecoration(
+                  labelText: "Date of Birth",
+                  border: OutlineInputBorder(),
+                ),
+                child: Text(
+                  selectedDOB == null
+                      ? "Select your date of birth"
+                      : "${selectedDOB!.day.toString().padLeft(2, '0')}/"
+                            "${selectedDOB!.month.toString().padLeft(2, '0')}/"
+                            "${selectedDOB!.year}",
+                  style: TextStyle(
+                    color: selectedDOB == null ? Colors.grey : Colors.black,
+                  ),
+                ),
+              ),
             ),
 
             const SizedBox(height: 16),
@@ -227,29 +254,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   selectedFrequency = value!;
                 });
               },
-            ),
-
-            const SizedBox(height: 16),
-
-            // DOB Picker
-            GestureDetector(
-              onTap: pickDOB,
-              child: InputDecorator(
-                decoration: const InputDecoration(
-                  labelText: "Date of Birth",
-                  border: OutlineInputBorder(),
-                ),
-                child: Text(
-                  selectedDOB == null
-                      ? "Select your date of birth"
-                      : "${selectedDOB!.day.toString().padLeft(2, '0')}/"
-                            "${selectedDOB!.month.toString().padLeft(2, '0')}/"
-                            "${selectedDOB!.year}",
-                  style: TextStyle(
-                    color: selectedDOB == null ? Colors.grey : Colors.black,
-                  ),
-                ),
-              ),
             ),
 
             const SizedBox(height: 32),

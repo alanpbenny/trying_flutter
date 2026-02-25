@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'messages.dart';
-
+import 'otherProfile_scree.dart';
 class MessagesScreen extends StatefulWidget {
   const MessagesScreen({super.key});
 
@@ -94,7 +94,14 @@ class _MessagesScreenState extends State<MessagesScreen> {
                   return Padding(
                     padding: const EdgeInsets.only(right: 12),
                     child: GestureDetector(
-                      onTap: () => acceptMatch(user),
+                      onTap: () {
+                        Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => OtherProfileScreen(),
+                      ),
+                    );
+                      },
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [

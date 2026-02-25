@@ -7,7 +7,11 @@ class OtherProfileScreen extends StatelessWidget {
   final String gym = "Western Gym";
   final String goal = "Muscle Gain";
 
-  const OtherProfileScreen({super.key});
+  final String user;
+
+
+  const OtherProfileScreen({super.key, required this.user});
+
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +56,7 @@ class OtherProfileScreen extends StatelessWidget {
                     right: 20,
                     bottom: 20,
                     child: Text(
-                      "$name, $age", // replace 22 with real age later
+                      "$user, $age", // replace 22 with real age later
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 34,

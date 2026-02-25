@@ -17,10 +17,34 @@ class _MessagesScreenState extends State<MessagesScreen> {
   bool selectionMode = false;
   Set<String> selectedMessages = {};
 
+   void openFullProfile(String user) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => OtherProfileScreen(user: user)),
+    );
+
+    if (result == "Liked") {
+      debugPrint("Moving to next user");
+
+      acceptMatch(user); // For demo, we just accept "User 1". In real app, pass the actual user.
+    }
+
+    if (result == "Passed") {
+      removeMatch(user); // For demo, we just remove "User 1". In real app, pass the actual user.
+    }
+  }
+
   void acceptMatch(String user) {
     setState(() {
       pendingMatches.remove(user);
       activeMessages.insert(0, user);
+    });
+  }
+
+  void removeMatch(String user) {
+    setState(() {
+      pendingMatches.remove(user);
+      //activeMessages.insert(0, user);
     });
   }
 
@@ -97,12 +121,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                     padding: const EdgeInsets.only(right: 12),
                     child: GestureDetector(
                       onTap: () {
-                        Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => Altotherprofilescreen(),
-                      ),
-                    );
+                       openFullProfile(user);
                       },
                       child: Column(
                         mainAxisSize: MainAxisSize.min,

@@ -32,7 +32,7 @@ class _SwipeScreenState extends State<SwipeScreen> {
   void openFullProfile() async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => OtherProfileScreen()),
+      MaterialPageRoute(builder: (_) => OtherProfileScreen(user: users[currentIndex]["name"]!)),
     );
 
     if (result == "Liked") {

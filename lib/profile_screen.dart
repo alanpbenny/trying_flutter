@@ -46,10 +46,10 @@ class ProfileScreen extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min, // prevents taking full height
                 children: [
                   Text(
-                    "Gym: ${currentUser?.gym}",
+                    "${currentUser?.gym}",
                     style: TextStyle(fontSize: 18),
                   ),
-                  Text("Goal: ${currentUser?.goal ?? 'None'}", style: TextStyle(fontSize: 18)),
+                  Text("${currentUser?.goal ?? 'None'}", style: TextStyle(fontSize: 18)),
                   Text(
                     "Frequency: ${currentUser?.frequency ?? 'None'}",
                     style: TextStyle(fontSize: 18),

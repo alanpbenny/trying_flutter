@@ -23,9 +23,27 @@ class _SwipeScreenState extends State<SwipeScreen> {
   int currentIndex = 0;
 
   void nextUser() {
+    debugPrint("Moving to next user");
     setState(() {
       currentIndex = (currentIndex + 1) % users.length;
     });
+  }
+
+  void openFullProfile() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => OtherProfileScreen()),
+    );
+
+    if (result == "Liked") {
+      debugPrint("Moving to next user");
+
+      nextUser();
+    }
+
+    if (result == "Passed") {
+      nextUser();
+    }
   }
 
   @override
@@ -79,12 +97,7 @@ class _SwipeScreenState extends State<SwipeScreen> {
                 // ✅ GestureDetector goes INSIDE child
                 child: GestureDetector(
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => OtherProfileScreen(),
-                      ),
-                    );
+                    openFullProfile();
                   },
 
                   child: Card(
@@ -158,7 +171,10 @@ class _SwipeScreenState extends State<SwipeScreen> {
                                       shape: const CircleBorder(),
                                       padding: const EdgeInsets.all(18),
                                     ),
-                                    onPressed: nextUser,
+                                    onPressed: () {
+                                      nextUser();
+                                      debugPrint("Passed ${user["name"]}");
+                                    },
                                     child: const Icon(Icons.close, size: 28),
                                   ),
                                   ElevatedButton(
@@ -167,7 +183,11 @@ class _SwipeScreenState extends State<SwipeScreen> {
                                       shape: const CircleBorder(),
                                       padding: const EdgeInsets.all(18),
                                     ),
-                                    onPressed: nextUser,
+                                    onPressed: () {
+                                      nextUser();
+
+                                      debugPrint("Liked ${user["name"]}");
+                                    },
                                     child: const Icon(Icons.favorite, size: 28),
                                   ),
                                 ],

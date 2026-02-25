@@ -13,13 +13,13 @@
 import 'package:flutter/material.dart';
 import '../models/current_user.dart';
 
-class altotherprofilescreen extends StatelessWidget {
+class Altotherprofilescreen extends StatelessWidget {
   final String name = "Alex";
   final String age = "22";
   final String gym = "Western Gym";
   final String goal = "Muscle Gain";
 
-  const altotherprofilescreen({super.key});
+  const Altotherprofilescreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -72,6 +72,32 @@ class altotherprofilescreen extends StatelessWidget {
                       ),
                     ),
                   ),
+                  Positioned(
+                    bottom: 20,
+                    right: 20,
+                    child: Row(
+                    children: [
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          shape: const CircleBorder(),
+                          padding: const EdgeInsets.all(18),
+                        ),
+                        onPressed: () {},
+                        child: const Icon(Icons.close, size: 28, color: Colors.black),
+                      ),
+                       ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          shape: const CircleBorder(),
+                          padding: const EdgeInsets.all(18),
+                        ),
+                        onPressed: () {},
+                        child: const Icon(Icons.check, size: 28, color: Colors.black),
+                      ),
+                    ],
+                  ),
+                  ),
                 ],
               ),
             ),
@@ -79,22 +105,21 @@ class altotherprofilescreen extends StatelessWidget {
             const SizedBox(height: 20),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 40),
-              child: Text("Introduction", 
-              style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey,
-              )),
-
+              child: Text(
+                "Introduction",
+                style: TextStyle(fontSize: 18, color: Colors.grey),
+              ),
             ),
             const SizedBox(height: 24),
-             Padding(
+            Padding(
               padding: const EdgeInsets.symmetric(horizontal: 40),
-              child: Text("lnlasdnoodans asdpjpajpsdpajspd amsdpmapsdjpapdsjpa apsdpjmapdsjpasjdp pamsdpapdspdp pasjdpjpadpasjpd pjaspdjpadpas", 
-              style: TextStyle(
-              fontSize: 20,
-              color: const Color.fromARGB(255, 0, 0, 0),
-              )),
-
+              child: Text(
+                "lnlasdnoodans asdpjpajpsdpajspd amsdpmapsdjpapdsjpa apsdpjmapdsjpasjdp pamsdpapdspdp pasjdpjpadpasjpd pjaspdjpadpas",
+                style: TextStyle(
+                  fontSize: 20,
+                  color: const Color.fromARGB(255, 0, 0, 0),
+                ),
+              ),
             ),
           ],
         ),
@@ -102,119 +127,6 @@ class altotherprofilescreen extends StatelessWidget {
     );
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

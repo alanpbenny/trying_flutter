@@ -63,15 +63,32 @@ class OtherProfileScreen extends StatelessWidget {
                   Positioned(
                     bottom: 20,
                     right: 20,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        shape: const CircleBorder(),
-                        padding: const EdgeInsets.all(18),
+                    child: Row(
+                    children: [
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          shape: const CircleBorder(),
+                          padding: const EdgeInsets.all(18),
+                        ),
+                        onPressed: () {
+                          Navigator.pop(context, "Passed");
+                        },
+                        child: const Icon(Icons.close, size: 28, color: Colors.black),
                       ),
-                      onPressed: () {},
-                      child: const Icon(Icons.close, size: 28),
-                    ),
+                       ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          shape: const CircleBorder(),
+                          padding: const EdgeInsets.all(18),
+                        ),
+                        onPressed: () {
+                          Navigator.pop(context, "Liked");
+                        },
+                        child: const Icon(Icons.check, size: 28, color: Colors.black),
+                      ),
+                    ],
+                  ),
                   ),
                 ],
               ),

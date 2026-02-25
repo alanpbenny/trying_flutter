@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'messages.dart';
 import 'otherProfile_scree.dart';
+import 'altOtherProfileScreen.dart';
+
 class MessagesScreen extends StatefulWidget {
   const MessagesScreen({super.key});
 
@@ -98,7 +100,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                         Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => OtherProfileScreen(),
+                        builder: (context) => Altotherprofilescreen(),
                       ),
                     );
                       },

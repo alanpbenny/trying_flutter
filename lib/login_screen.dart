@@ -76,57 +76,92 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(32),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const Spacer(),
+
+              // App Title
               const Text(
-                "Gym Buddy",
+                "Spottr",
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 42,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
+
               const SizedBox(height: 8),
+
               const Text(
                 "Find your workout partner",
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 16, color: Colors.grey),
               ),
+
               const SizedBox(height: 40),
+
+              // Email Field
               TextField(
-                controller: _emailController,
                 decoration: InputDecoration(
                   labelText: "Email",
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-                keyboardType: TextInputType.emailAddress,
               ),
+
               const SizedBox(height: 16),
+
+              // Password Field
               TextField(
-                controller: _passwordController,
                 obscureText: true,
                 decoration: InputDecoration(
                   labelText: "Password",
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
+
               const SizedBox(height: 24),
+
+              // Login Button
               ElevatedButton(
-                onPressed: _isLoading ? null : _signIn,
+                onPressed: () {
+                  Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ProfileSetupScreen(),
+                  ),
+                );
+                },
                 style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black,
+                  elevation: 2,
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-                child: _isLoading
-                    ? const CircularProgressIndicator()
-                    : const Text("Log In", style: TextStyle(fontSize: 16)),
+                child: const Text(
+                  "Log In",
+                  style: TextStyle(fontSize: 16),
+                ),
               ),
               const SizedBox(height: 16),
+
+              // Create Account
               TextButton(
-                onPressed: _isLoading ? null : _signUp,
+                onPressed: () {
+                  // Navigate to sign up later
+                },
                 child: const Text("Create an account"),
               ),
             ],

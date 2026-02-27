@@ -1,3 +1,4 @@
+/*
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user.dart' as app_models;
 
@@ -62,3 +63,4 @@ class SupabaseService {
     return List<Map<String, dynamic>>.from(data);
   }
 }
+*/

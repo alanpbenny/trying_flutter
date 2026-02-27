@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+//import 'package:supabase_flutter/supabase_flutter.dart';
 import 'home_screen.dart';
-<<<<<<< HEAD
 import 'services/supabase_service.dart';
-=======
 import '../models/current_user.dart';
 import '../models/user_model.dart';
->>>>>>> AlanUI
 
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -19,9 +16,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final TextEditingController nameController = TextEditingController();
 
   String selectedGoal = 'Muscle Gain';
+  String  selectedGym = 'Western Rec Centre';
   String selectedFrequency = '3-4 times/week';
   bool _isLoading = false;
-
+  /*
   Future<void> _saveProfile() async {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) return;
@@ -51,6 +49,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       if (mounted) setState(() => _isLoading = false);
     }
   }
+  */
 
   DateTime? selectedDOB;
 
@@ -128,57 +127,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
-<<<<<<< HEAD
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: "Name"),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: gymController,
-                decoration: const InputDecoration(labelText: "Gym"),
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: selectedGoal,
-                decoration: const InputDecoration(labelText: "Fitness Goal"),
-                items: const [
-                  DropdownMenuItem(value: 'Muscle Gain', child: Text('Muscle Gain')),
-                  DropdownMenuItem(value: 'Weight Loss', child: Text('Weight Loss')),
-                  DropdownMenuItem(value: 'Cardio', child: Text('Cardio')),
-                  DropdownMenuItem(value: 'General Fitness', child: Text('General Fitness')),
-                ],
-                onChanged: (value) => setState(() => selectedGoal = value!),
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: selectedFrequency,
-                decoration: const InputDecoration(labelText: "Workout Frequency"),
-                items: const [
-                  DropdownMenuItem(value: '1-2 times/week', child: Text('1-2 times/week')),
-                  DropdownMenuItem(value: '3-4 times/week', child: Text('3-4 times/week')),
-                  DropdownMenuItem(value: '5+ times/week', child: Text('5+ times/week')),
-                ],
-                onChanged: (value) => setState(() => selectedFrequency = value!),
-              ),
-              const SizedBox(height: 32),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _saveProfile,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: _isLoading
-                    ? const CircularProgressIndicator()
-                    : const Text("Continue", style: TextStyle(fontSize: 16)),
-              ),
-            ],
-          ),
-=======
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -349,7 +297,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               child: const Text("Continue"),
             ),
           ],
->>>>>>> AlanUI
         ),
       ),
     );

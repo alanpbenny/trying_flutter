@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 //import 'package:supabase_flutter/supabase_flutter.dart';
 import 'home_screen.dart';
-import 'services/supabase_service.dart';
 import '../models/current_user.dart';
 import '../models/user_model.dart';
 
@@ -16,7 +15,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final TextEditingController nameController = TextEditingController();
 
   String selectedGoal = 'Muscle Gain';
-  String  selectedGym = 'Western Rec Centre';
+  String selectedGym = 'Western Rec Centre';
   String selectedFrequency = '3-4 times/week';
   bool _isLoading = false;
   /*
@@ -50,7 +49,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     }
   }
   */
-
   DateTime? selectedDOB;
 
   Future<void> pickDOB() async {

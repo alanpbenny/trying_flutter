@@ -5,6 +5,10 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 */
 import 'login_screen.dart';
 
+void main() {
+  runApp(const GymBuddyApp());
+}
+
 /*
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

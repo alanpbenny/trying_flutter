@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+//import 'package:supabase_flutter/supabase_flutter.dart';
 import 'profile_setup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -14,6 +14,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
 
+  /*
   Future<void> _signIn() async {
     setState(() => _isLoading = true);
     try {
@@ -71,7 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
-  }
+  }*/
 
   @override
   Widget build(BuildContext context) {

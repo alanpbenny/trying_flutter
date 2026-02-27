@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-<<<<<<< HEAD
 import 'models/user.dart';
 import 'services/mock_data.dart';
-=======
 import 'package:trying_flutter/otherProfile_scree.dart';
->>>>>>> AlanUI
 
 class SwipeScreen extends StatefulWidget {
   const SwipeScreen({super.key});
@@ -14,8 +11,6 @@ class SwipeScreen extends StatefulWidget {
 }
 
 class _SwipeScreenState extends State<SwipeScreen> {
-<<<<<<< HEAD
-=======
   final List<Map<String, String>> users = [
     {"name": "Alex", "age": "22", "gym": "Western Gym", "goal": "Muscle Gain"},
     {
@@ -27,25 +22,11 @@ class _SwipeScreenState extends State<SwipeScreen> {
     {"name": "Chris", "age": "27", "gym": "City Gym", "goal": "Endurance"},
   ];
 
->>>>>>> AlanUI
   int currentIndex = 0;
 
   void nextUser() {
     debugPrint("Moving to next user");
     setState(() {
-<<<<<<< HEAD
-      if (currentIndex < mockProfiles.length - 1) {
-        currentIndex++;
-      } else {
-        currentIndex = 0; // loop back for now
-      }
-    });
-  }
-
-  void likeUser() {
-    matches.add(mockProfiles[currentIndex]);
-    nextUser();
-=======
       currentIndex = (currentIndex + 1) % users.length;
     });
   }
@@ -65,7 +46,6 @@ class _SwipeScreenState extends State<SwipeScreen> {
     if (result == "Passed") {
       nextUser();
     }
->>>>>>> AlanUI
   }
 
   @override
@@ -153,16 +133,6 @@ class _SwipeScreenState extends State<SwipeScreen> {
                               ),
                             ),
                           ),
-<<<<<<< HEAD
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              shape: const CircleBorder(),
-                              padding: const EdgeInsets.all(20),
-                            ),
-                            onPressed: likeUser,
-                            child: const Icon(Icons.favorite, size: 30),
-=======
                         ),
 
                         // 📝 Text + buttons overlay
@@ -225,7 +195,6 @@ class _SwipeScreenState extends State<SwipeScreen> {
                                 ],
                               ),
                             ],
->>>>>>> AlanUI
                           ),
                         ),
                       ],

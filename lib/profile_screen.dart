@@ -3,7 +3,7 @@ import 'models/user.dart';
 //import 'edit_profile_screen.dart';
 import 'profile_setup_screen.dart';
 import 'settings.dart';
-import './models/current_user.dart';
+import './models/current_user.dart' as current_user;
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});

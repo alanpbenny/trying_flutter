@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
-<<<<<<< HEAD
-import 'models/user.dart';
-=======
 import 'messages.dart';
 import 'otherProfile_scree.dart';
 import 'altOtherProfileScreen.dart';
->>>>>>> AlanUI
 
 class MessagesScreen extends StatefulWidget {
   const MessagesScreen({super.key});
@@ -96,27 +92,6 @@ class _MessagesScreenState extends State<MessagesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-<<<<<<< HEAD
-      appBar: AppBar(title: const Text("Matches")),
-      body: matches.isEmpty
-          ? const Center(
-              child: Text(
-                "No matches yet. Start swiping!",
-                style: TextStyle(fontSize: 18),
-              ),
-            )
-          : ListView.builder(
-              itemCount: matches.length,
-              itemBuilder: (context, index) {
-                final match = matches[index];
-                return ListTile(
-                  leading: const Icon(Icons.person),
-                  title: Text(match["name"]!),
-                  subtitle: Text("${match["gym"]} - ${match["goal"]}"),
-                );
-              },
-            ),
-=======
       appBar: AppBar(
         title: selectionMode
             ? Text("${selectedMessages.length} selected")
@@ -189,7 +164,6 @@ class _MessagesScreenState extends State<MessagesScreen> {
           ),
         ],
       ),
->>>>>>> AlanUI
     );
   }
 }

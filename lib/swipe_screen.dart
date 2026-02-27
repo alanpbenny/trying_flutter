@@ -50,7 +50,7 @@ class _SwipeScreenState extends State<SwipeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = mockProfiles[currentIndex];
+    final user = users[currentIndex];
 
     return Scaffold(
       backgroundColor: Colors.grey[100],

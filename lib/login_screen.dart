@@ -74,6 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }*/
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -97,74 +98,63 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
 
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
 
               const Text(
                 "Find your workout partner",
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, color: Colors.grey),
-              ),
-
-              const SizedBox(height: 40),
-
-              // Email Field
-              TextField(
-                decoration: InputDecoration(
-                  labelText: "Email",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey,
                 ),
               ),
 
-              const SizedBox(height: 16),
+              const Spacer(),
 
-              // Password Field
-              TextField(
-                obscureText: true,
-                decoration: InputDecoration(
-                  labelText: "Password",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Login Button
-              ElevatedButton(
+              // Google Sign-In Button
+              ElevatedButton.icon(
                 onPressed: () {
-                  Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ProfileSetupScreen(),
-                  ),
-                );
+                  // TEMP: navigate directly
+                  // Later this will be Google Sign-In
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ProfileSetupScreen(),
+                    ),
+                  );
                 },
+                icon: Image.asset(
+                  'assets/google_logo.png',
+                  height: 20,
+                ),
+                label: const Text(
+                  "Continue with Google",
+                  style: TextStyle(fontSize: 16),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: Colors.black,
                   elevation: 2,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(30),
+                    side: const BorderSide(color: Colors.grey),
                   ),
                 ),
-                child: const Text(
-                  "Log In",
-                  style: TextStyle(fontSize: 16),
+              ),
+
+              const SizedBox(height: 24),
+
+              const Text(
+                "By continuing, you agree to our Terms & Privacy Policy",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey,
                 ),
               ),
-              const SizedBox(height: 16),
 
-              // Create Account
-              TextButton(
-                onPressed: () {
-                  // Navigate to sign up later
-                },
-                child: const Text("Create an account"),
-              ),
+              const SizedBox(height: 16),
             ],
           ),
         ),

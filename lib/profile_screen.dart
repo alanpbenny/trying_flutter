@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'models/user.dart';
+//import 'models/user.dart';
 //import 'edit_profile_screen.dart';
 import 'profile_setup_screen.dart';
 import 'settings.dart';
-import './models/current_user.dart' as current_user;
+import './models/current_user.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});

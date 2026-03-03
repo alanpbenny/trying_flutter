@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "921950633809",
+    "project_id": "spottr-2b5c1",
+    "storage_bucket": "spottr-2b5c1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:921950633809:android:376621c5aba67ad121dd70",
+        "android_client_info": {
+          "package_name": "com.example.trying_flutter"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDmKGaL7huovlEWkgLDk10u6nwqiWZb7qQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:921950633809:android:d1600c1ec8b7e87221dd70",
+        "android_client_info": {
+          "package_name": "com.spottr.trying_flutter"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDmKGaL7huovlEWkgLDk10u6nwqiWZb7qQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

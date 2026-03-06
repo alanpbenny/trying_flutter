@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:trying_flutter/services/auth_service.dart';
 //import 'package:supabase_flutter/supabase_flutter.dart';
 import 'profile_setup_screen.dart';
 
@@ -113,15 +114,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
               // Google Sign-In Button
               ElevatedButton.icon(
-                onPressed: () {
-                  // TEMP: navigate directly
-                  // Later this will be Google Sign-In
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const ProfileSetupScreen(),
-                    ),
-                  );
+                onPressed: () async {
+                  setState(() => _isLoading = true);
+                  final user = await AuthService().signInWithGoogle();
+                  setState(() => _isLoading = false);
+                  if (user != null && mounted) {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => const ProfileSetupScreen()),
+                    );
+                  }
                 },
                 icon: Image.asset(
                   'assets/google_logo.png',

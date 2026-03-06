@@ -85,4 +85,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'spottr-2b5c1.firebasestorage.app',
     measurementId: 'G-Q7TSJTKKP6',
   );
+
 }

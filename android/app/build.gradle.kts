@@ -9,7 +9,7 @@ plugins {
 }
 
 android {
-    namespace = "com.spottr.trying_flutter"
+    namespace = "com.example.trying_flutter"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 

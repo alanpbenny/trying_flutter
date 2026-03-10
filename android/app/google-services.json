@@ -12,7 +12,12 @@
           "package_name": "com.example.trying_flutter"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "921950633809-vv0fb3g850ncql8guarm0rkjjmalva2m.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDmKGaL7huovlEWkgLDk10u6nwqiWZb7qQ"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "921950633809-vv0fb3g850ncql8guarm0rkjjmalva2m.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "921950633809-724lutgvbksc6pqqve8i9spaokph0a8l.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.tryingFlutter"
+              }
+            }
+          ]
         }
       }
     },
@@ -31,7 +48,20 @@
           "package_name": "com.spottr.trying_flutter"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "921950633809-fl6efrvhfqfh45p3pgacjopp234ra10f.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.spottr.trying_flutter",
+            "certificate_hash": "66343a2f5ce6fdedaa53f4535c5e339936bd3580"
+          }
+        },
+        {
+          "client_id": "921950633809-vv0fb3g850ncql8guarm0rkjjmalva2m.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDmKGaL7huovlEWkgLDk10u6nwqiWZb7qQ"
@@ -39,7 +69,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "921950633809-vv0fb3g850ncql8guarm0rkjjmalva2m.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "921950633809-724lutgvbksc6pqqve8i9spaokph0a8l.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.tryingFlutter"
+              }
+            }
+          ]
         }
       }
     }

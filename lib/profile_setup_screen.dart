@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import '../models/current_user.dart';
 import '../models/user_model.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
 
@@ -94,6 +95,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       );
       return;
     }
+
+
     currentUser = UserModel(
       name: nameController.text.trim(),
       gym: selectedGym,
@@ -108,6 +111,16 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     debugPrint("Frequency: $selectedFrequency");
     debugPrint("DOB: $selectedDOB");
     debugPrint("Age: $age");
+
+    String uid = FirebaseAuth.instance.currentUser!.uid;
+      FirebaseFirestore.instance.collection('users').doc(uid).update({
+        'name': nameController.text.trim(),
+        'gym': selectedGym,
+        'fitnessGoal': selectedGoal,
+        'Frequency': selectedFrequency,
+        'age': age.toString(),
+        'onboardingComplete': true,});
+
 
     Navigator.push(
       context,

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:trying_flutter/services/auth_service.dart';
 //import 'package:supabase_flutter/supabase_flutter.dart';
 import 'profile_setup_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -75,6 +77,38 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }*/
 
+  flow() async {
+    debugPrint("In flow rn!");
+
+    setState(() => _isLoading = true);
+    final user = await AuthService().signInWithGoogle();
+    setState(() => _isLoading = false);
+
+    if (user != null && mounted) {
+      debugPrint("Doing the decision!");
+
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      final data = userDoc.data();
+
+      bool onboardingComplete = data?['onboardingComplete'] ?? false;
+
+      if (onboardingComplete) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const ProfileSetupScreen()),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -93,10 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const Text(
                 "Spottr",
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 42,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 42, fontWeight: FontWeight.bold),
               ),
 
               const SizedBox(height: 12),
@@ -104,10 +135,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const Text(
                 "Find your workout partner",
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
-                ),
+                style: TextStyle(fontSize: 16, color: Colors.grey),
               ),
 
               const Spacer(),
@@ -115,20 +143,11 @@ class _LoginScreenState extends State<LoginScreen> {
               // Google Sign-In Button
               ElevatedButton.icon(
                 onPressed: () async {
-                  setState(() => _isLoading = true);
-                  final user = await AuthService().signInWithGoogle();
-                  setState(() => _isLoading = false);
-                  if (user != null && mounted) {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => const ProfileSetupScreen()),
-                    );
-                  }
+                  debugPrint("Clicked on Login!");
+
+                  flow();
                 },
-                icon: Image.asset(
-                  'assets/google_logo.png',
-                  height: 20,
-                ),
+                icon: Image.asset('assets/google_logo.png', height: 20),
                 label: const Text(
                   "Continue with Google",
                   style: TextStyle(fontSize: 16),
@@ -150,10 +169,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const Text(
                 "By continuing, you agree to our Terms & Privacy Policy",
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey,
-                ),
+                style: TextStyle(fontSize: 12, color: Colors.grey),
               ),
 
               const SizedBox(height: 16),

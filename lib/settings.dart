@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -33,7 +34,8 @@ class SettingsScreen extends StatelessWidget {
                 builder: (context) => AlertDialog(
                   title: const Text("Delete Account"),
                   content: const Text(
-                      "Are you sure you want to delete your account?"),
+                    "Are you sure you want to delete your account?",
+                  ),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context),
@@ -98,23 +100,21 @@ class SettingsScreen extends StatelessWidget {
           const Divider(),
 
           // 🔹 App Version
-          const ListTile(
-            title: Text("App Version"),
-            subtitle: Text("1.0.0"),
-          ),
+          const ListTile(title: Text("App Version"), subtitle: Text("1.0.0")),
 
           const Divider(),
 
           // 🔹 Logout Button
-          ListTile(
+           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),
-            title: const Text(
-              "Logout",
-              style: TextStyle(color: Colors.red),
-            ),
-            onTap: () {
+            title: const Text("Logout", style: TextStyle(color: Colors.red)),
+            onTap: () async {
               // TODO: Firebase signOut()
               Navigator.pop(context);
+              await AuthService().signOut();
+              debugPrint("Logged out");
+
+     
             },
           ),
         ],

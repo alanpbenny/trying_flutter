@@ -3,7 +3,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-
 class AuthService {
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
 
@@ -12,11 +11,12 @@ class AuthService {
       if (kIsWeb) {
         debugPrint("In Web AUTH!");
 
-        GoogleAuthProvider googleProvider = GoogleAuthProvider();
-
+        GoogleAuthProvider googleProvider = GoogleAuthProvider()
+          ..setCustomParameters({'prompt': 'select_account'});
+          
         UserCredential userCredential = await FirebaseAuth.instance
             .signInWithPopup(googleProvider);
-          
+
         User? user = userCredential.user;
 
         if (user != null) {
@@ -35,8 +35,6 @@ class AuthService {
           .authenticate();
 
       if (googleUser == null) return null;
-
-   
 
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
@@ -63,16 +61,17 @@ class AuthService {
   }
 
   Future<void> signOut() async {
-    await _googleSignIn.signOut();
+    debugPrint("Signing out...");
+    if (!kIsWeb) {
+      await _googleSignIn.signOut();
+    }
+
     await FirebaseAuth.instance.signOut();
   }
 }
 
-
 Future<void> createUserDocument(User user) async {
-
-  final userRef =
-      FirebaseFirestore.instance.collection('users').doc(user.uid);
+  final userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
 
   final doc = await userRef.get();
 
@@ -87,8 +86,7 @@ Future<void> createUserDocument(User user) async {
       'Frequency': '',
       'availability': '',
       'createdAt': Timestamp.now(),
-      'onboardingComplete': false
+      'onboardingComplete': false,
     });
-
   }
 }

@@ -5,6 +5,7 @@ import '../models/current_user.dart';
 import '../models/user_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
 
@@ -96,13 +97,13 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       return;
     }
 
-
     currentUser = UserModel(
+      id: '1',
       name: nameController.text.trim(),
       gym: selectedGym,
       goal: selectedGoal,
       frequency: selectedFrequency,
-      dob: selectedDOB!,
+      age: age,
     );
 
     debugPrint("Name: ${nameController.text}");
@@ -113,14 +114,14 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     debugPrint("Age: $age");
 
     String uid = FirebaseAuth.instance.currentUser!.uid;
-      FirebaseFirestore.instance.collection('users').doc(uid).update({
-        'name': nameController.text.trim(),
-        'gym': selectedGym,
-        'fitnessGoal': selectedGoal,
-        'Frequency': selectedFrequency,
-        'age': age.toString(),
-        'onboardingComplete': true,});
-
+    FirebaseFirestore.instance.collection('users').doc(uid).set({
+      'name': nameController.text.trim(),
+      'gym': selectedGym,
+      'goal': selectedGoal, // ✅ consistent
+      'frequency': selectedFrequency, // ✅ consistent
+      'age': age, // ✅ int, NOT string
+      'onboardingComplete': true,
+    });
 
     Navigator.push(
       context,

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'models/user.dart';
 import 'services/mock_data.dart';
 import 'package:trying_flutter/otherProfile_scree.dart';
-
+import '../models/user_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 class SwipeScreen extends StatefulWidget {
   const SwipeScreen({super.key});
 
@@ -10,7 +11,10 @@ class SwipeScreen extends StatefulWidget {
   State<SwipeScreen> createState() => _SwipeScreenState();
 }
 
+
+
 class _SwipeScreenState extends State<SwipeScreen> {
+  /*
   final List<Map<String, String>> users = [
     {"name": "Alex", "age": "22", "gym": "Western Gym", "goal": "Muscle Gain"},
     {
@@ -21,6 +25,34 @@ class _SwipeScreenState extends State<SwipeScreen> {
     },
     {"name": "Chris", "age": "27", "gym": "City Gym", "goal": "Endurance"},
   ];
+  */
+
+  List<UserModel> users = [];
+
+  bool isLoading = true;
+
+  Future<void> fetchUsers() async {
+    try {
+      final snapshot =
+          await FirebaseFirestore.instance.collection('users').get();
+
+      final fetchedUsers = snapshot.docs.map((doc) {
+        return UserModel.fromFirestore(doc.data(), doc.id);
+      }).toList();
+
+      setState(() {
+        users = fetchedUsers;
+        isLoading = false;
+      });
+    } catch (e) {
+      debugPrint("Error fetching users: $e");
+    }
+  }
+  @override
+  void initState() {
+    super.initState();
+    fetchUsers();
+  }
 
   int currentIndex = 0;
 
@@ -34,7 +66,7 @@ class _SwipeScreenState extends State<SwipeScreen> {
   void openFullProfile() async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => OtherProfileScreen(user: users[currentIndex]["name"]!)),
+      MaterialPageRoute(builder: (_) => OtherProfileScreen(user: users[currentIndex])),
     );
 
     if (result == "Liked") {
@@ -50,6 +82,18 @@ class _SwipeScreenState extends State<SwipeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    
+    if (isLoading) {
+    return const Scaffold(
+      body: Center(child: CircularProgressIndicator()),
+    );
+    }
+
+    if (users.isEmpty) {
+    return const Scaffold(
+      body: Center(child: Text("No users found")),
+    );
+    }
     final user = users[currentIndex];
 
     return Scaffold(
@@ -64,13 +108,13 @@ class _SwipeScreenState extends State<SwipeScreen> {
             // 🔥 Profile Card
             Expanded(
               child: Dismissible(
-                key: ValueKey("${user["name"]}-$currentIndex"),
+                key: ValueKey("${user.name}-$currentIndex"),
                 direction: DismissDirection.horizontal,
                 onDismissed: (direction) {
                   if (direction == DismissDirection.startToEnd) {
-                    debugPrint("Liked ${user["name"]}");
+                    debugPrint("Liked ${user.name}");
                   } else {
-                    debugPrint("Passed ${user["name"]}");
+                    debugPrint("Passed ${user.name}");
                   }
                   nextUser();
                 },
@@ -144,7 +188,7 @@ class _SwipeScreenState extends State<SwipeScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                "${user["name"]}, ${user["age"]}",
+                                "${user.name}, ${user.age}",
                                 style: const TextStyle(
                                   fontSize: 26,
                                   fontWeight: FontWeight.bold,
@@ -153,11 +197,11 @@ class _SwipeScreenState extends State<SwipeScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                "Gym: ${user["gym"]}",
+                                "Gym: ${user.gym}",
                                 style: const TextStyle(color: Colors.white),
                               ),
                               Text(
-                                "Goal: ${user["goal"]}",
+                                "Goal: ${user.goal}",
                                 style: const TextStyle(color: Colors.white),
                               ),
                               const SizedBox(height: 12),
@@ -175,7 +219,7 @@ class _SwipeScreenState extends State<SwipeScreen> {
                                     ),
                                     onPressed: () {
                                       nextUser();
-                                      debugPrint("Passed ${user["name"]}");
+                                      debugPrint("Passed ${user.name}");
                                     },
                                     child: const Icon(Icons.close, size: 28),
                                   ),
@@ -188,7 +232,7 @@ class _SwipeScreenState extends State<SwipeScreen> {
                                     onPressed: () {
                                       nextUser();
 
-                                      debugPrint("Liked ${user["name"]}");
+                                      debugPrint("Liked ${user.name}");
                                     },
                                     child: const Icon(Icons.favorite, size: 28),
                                   ),

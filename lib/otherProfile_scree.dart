@@ -1,22 +1,15 @@
 import 'package:flutter/material.dart';
 import '../models/current_user.dart';
-
+import '../models/user_model.dart';
 class OtherProfileScreen extends StatelessWidget {
-  final String name = "Alex";
-  final String age = "22";
-  final String gym = "Western Gym";
-  final String goal = "Muscle Gain";
+  final UserModel user;
 
-  final String user;
-
-
-  const OtherProfileScreen({super.key, required this.user});
-
+  OtherProfileScreen({super.key, required this.user});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(name), centerTitle: true),
+      appBar: AppBar(title: Text(user.name), centerTitle: true),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -56,7 +49,7 @@ class OtherProfileScreen extends StatelessWidget {
                     right: 20,
                     bottom: 20,
                     child: Text(
-                      "$user, $age", // replace 22 with real age later
+                      "${user.name}, ${user.age}",
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 34,

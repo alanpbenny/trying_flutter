@@ -17,6 +17,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
   bool selectionMode = false;
   Set<String> selectedMessages = {};
 
+  /*
    void openFullProfile(String user) async {
     final result = await Navigator.push(
       context,
@@ -33,6 +34,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
       removeMatch(user); // For demo, we just remove "User 1". In real app, pass the actual user.
     }
   }
+  */
 
   void acceptMatch(String user) {
     setState(() {
@@ -121,7 +123,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                     padding: const EdgeInsets.only(right: 12),
                     child: GestureDetector(
                       onTap: () {
-                       openFullProfile(user);
+                       //openFullProfile(user);
                       },
                       child: Column(
                         mainAxisSize: MainAxisSize.min,

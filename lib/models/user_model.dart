@@ -24,6 +24,7 @@ class UserModel {
       goal: data['goal'] ?? '',
       frequency: data['frequency'] ?? '',
 
+
     );
   }
 }

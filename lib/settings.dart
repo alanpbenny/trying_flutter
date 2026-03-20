@@ -110,7 +110,7 @@ class SettingsScreen extends StatelessWidget {
             title: const Text("Logout", style: TextStyle(color: Colors.red)),
             onTap: () async {
               // TODO: Firebase signOut()
-              Navigator.pop(context);
+             // Navigator.pop(context);
               await AuthService().signOut();
               debugPrint("Logged out");
 

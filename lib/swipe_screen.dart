@@ -4,14 +4,15 @@ import 'services/mock_data.dart';
 import 'package:trying_flutter/otherProfile_scree.dart';
 import '../models/user_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/current_user.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 class SwipeScreen extends StatefulWidget {
   const SwipeScreen({super.key});
 
   @override
   State<SwipeScreen> createState() => _SwipeScreenState();
 }
-
-
 
 class _SwipeScreenState extends State<SwipeScreen> {
   /*
@@ -31,14 +32,48 @@ class _SwipeScreenState extends State<SwipeScreen> {
 
   bool isLoading = true;
 
+  late String currentUserId;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      debugPrint("No logged in user");
+      return;
+    }
+
+    currentUserId = user.uid;
+
+    fetchUsers();
+  }
+
   Future<void> fetchUsers() async {
     try {
-      final snapshot =
-          await FirebaseFirestore.instance.collection('users').get();
+      // ✅ 1. Get current user data
+      final currentUserDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUserId)
+          .get();
 
-      final fetchedUsers = snapshot.docs.map((doc) {
-        return UserModel.fromFirestore(doc.data(), doc.id);
-      }).toList();
+      final currentUserData = currentUserDoc.data() as Map<String, dynamic>;
+
+      List seenUsers = currentUserData['seenUsers'] ?? [];
+
+      // ✅ 2. Get all users
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .get();
+
+      // ✅ 3. Filter users
+      final fetchedUsers = snapshot.docs
+          .map((doc) => UserModel.fromFirestore(doc.data(), doc.id))
+          .where(
+            (user) => user.id != currentUserId && !seenUsers.contains(user.id),
+          )
+          .toList();
 
       setState(() {
         users = fetchedUsers;
@@ -46,53 +81,66 @@ class _SwipeScreenState extends State<SwipeScreen> {
       });
     } catch (e) {
       debugPrint("Error fetching users: $e");
+
+      setState(() {
+        isLoading = false;
+      });
     }
-  }
-  @override
-  void initState() {
-    super.initState();
-    fetchUsers();
   }
 
   int currentIndex = 0;
 
-  void nextUser() {
-    debugPrint("Moving to next user");
+  Future<void> seen(UserModel user) async {
+    debugPrint("Seen function called");
+
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUserId)
+        .update({
+      'seenUsers': FieldValue.arrayUnion([user.id]),
+    });
+}
+
+  void removeTopUser() {
+    if (users.isEmpty) return;
+
     setState(() {
-      currentIndex = (currentIndex + 1) % users.length;
+      users.removeAt(currentIndex);
+
+      if (users.isEmpty) {
+        currentIndex = 0;
+      } else {
+        currentIndex = currentIndex % users.length;
+      }
     });
   }
 
   void openFullProfile() async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => OtherProfileScreen(user: users[currentIndex])),
+      MaterialPageRoute(
+        builder: (_) => OtherProfileScreen(user: users[currentIndex]),
+      ),
     );
 
     if (result == "Liked") {
       debugPrint("Moving to next user");
 
-      nextUser();
+      removeTopUser();
     }
 
     if (result == "Passed") {
-      nextUser();
+      removeTopUser();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    
     if (isLoading) {
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
-    );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-
     if (users.isEmpty) {
-    return const Scaffold(
-      body: Center(child: Text("No users found")),
-    );
+      return const Scaffold(body: Center(child: Text("No users found")));
     }
     final user = users[currentIndex];
 
@@ -110,13 +158,15 @@ class _SwipeScreenState extends State<SwipeScreen> {
               child: Dismissible(
                 key: ValueKey("${user.name}-$currentIndex"),
                 direction: DismissDirection.horizontal,
-                onDismissed: (direction) {
+                onDismissed: (direction) async {
                   if (direction == DismissDirection.startToEnd) {
                     debugPrint("Liked ${user.name}");
                   } else {
                     debugPrint("Passed ${user.name}");
                   }
-                  nextUser();
+                  await seen(user);
+                  removeTopUser();
+                  
                 },
                 background: Container(
                   alignment: Alignment.centerLeft,
@@ -218,7 +268,7 @@ class _SwipeScreenState extends State<SwipeScreen> {
                                       padding: const EdgeInsets.all(18),
                                     ),
                                     onPressed: () {
-                                      nextUser();
+                                      removeTopUser();
                                       debugPrint("Passed ${user.name}");
                                     },
                                     child: const Icon(Icons.close, size: 28),
@@ -230,7 +280,7 @@ class _SwipeScreenState extends State<SwipeScreen> {
                                       padding: const EdgeInsets.all(18),
                                     ),
                                     onPressed: () {
-                                      nextUser();
+                                      removeTopUser();
 
                                       debugPrint("Liked ${user.name}");
                                     },

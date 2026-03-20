@@ -3,13 +3,45 @@ import 'package:flutter/material.dart';
 //import 'edit_profile_screen.dart';
 import 'profile_setup_screen.dart';
 import 'settings.dart';
-import './models/current_user.dart';
+import './models/user_model.dart';
+import 'package:trying_flutter/services/user_service.dart';
+import 'package:trying_flutter/models/current_user.dart';
+//currentUser = UserModel();
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _loadUser();
+  }
+
+  Future<void> _loadUser() async {
+    await UserService.loadCurrentUser();
+    debugPrint("After load: ${UserService.currentUser?.name}"); // ADD THIS
+    debugPrint("After load: ${UserService.currentUser?.age}"); // ADD THIS
+
+    debugPrint("After load: ${UserService.currentUser?.goal}"); // ADD THIS
+
+    debugPrint("After load: ${UserService.currentUser?.gym}"); // ADD THIS
+
+    debugPrint("After load: ${UserService.currentUser?.frequency}"); // ADD THIS
+
+    if (mounted) setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
+    //final currentUser = UserService.currentUser;
+    final user = UserService.currentUser;
+    debugPrint("Current User in ProfileScreen: ${user?.name}");
+
     return Scaffold(
       appBar: AppBar(title: const Text("My Profile"), centerTitle: true),
       body: Padding(
@@ -23,7 +55,12 @@ class ProfileScreen extends StatelessWidget {
                 child: Icon(Icons.person, size: 80),
               ),
             ),
-            Center(child: Text(currentUser?.name ?? 'Guest', style: TextStyle(fontSize: 28))),
+            Center(
+              child: Text(
+                '${user?.name ?? 'Guest'}, ${user?.age ?? ''}',
+                style: TextStyle(fontSize: 28),
+              ),
+            ),
             //Spacer(),
             Center(
               child: ElevatedButton(
@@ -46,22 +83,17 @@ class ProfileScreen extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min, // prevents taking full height
                 children: [
-                  Text(
-                    "${currentUser?.gym}",
-                    style: TextStyle(fontSize: 18),
-                  ),
-                  Text("${currentUser?.goal ?? 'None'}", style: TextStyle(fontSize: 18)),
-                  Text(
-                    "Frequency: ${currentUser?.frequency ?? 'None'}",
-                    style: TextStyle(fontSize: 18),
-                  ),
+                  Text("${user?.gym}", style: TextStyle(fontSize: 18)),
+                  // ignore: unnecessary_string_interpolations
+                  Text("${user?.goal}", style: TextStyle(fontSize: 18)),
+                  Text("${user?.frequency}", style: TextStyle(fontSize: 18)),
                 ],
               ),
             ),
 
             Expanded(
               child: ListView(
-                children:  [
+                children: [
                   ListTile(
                     title: Text('FAQ'),
                     trailing: Icon(Icons.arrow_forward_ios, size: 16),

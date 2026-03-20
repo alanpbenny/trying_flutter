@@ -76,17 +76,22 @@ Future<void> createUserDocument(User user) async {
   final doc = await userRef.get();
 
   if (!doc.exists) {
+    Future<void> createUserDocument(User user) async {
+  final userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+
+  final doc = await userRef.get();
+
+  if (!doc.exists) {
     await userRef.set({
       'name': user.displayName ?? '',
       'email': user.email ?? '',
       'profileImage': user.photoURL ?? '',
-      'age': '',
-      'gym': '',
-      'fitnessGoal': '',
-      'Frequency': '',
-      'availability': '',
       'createdAt': Timestamp.now(),
       'onboardingComplete': false,
+      'seenUsers': [],
+      //'likedUsers': [],
     });
+  }
+}
   }
 }

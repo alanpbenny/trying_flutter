@@ -5,7 +5,7 @@ import '../models/current_user.dart';
 import '../models/user_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+import '../services/user_service.dart';
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
 
@@ -80,7 +80,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     return age;
   }
 
-  void handleContinue() {
+  void handleContinue() async {
     if (nameController.text.trim().isEmpty || selectedDOB == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please fill all required fields")),
@@ -97,15 +97,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       return;
     }
 
-    currentUser = UserModel(
-      id: '1',
-      name: nameController.text.trim(),
-      gym: selectedGym,
-      goal: selectedGoal,
-      frequency: selectedFrequency,
-      age: age,
-    );
-
     debugPrint("Name: ${nameController.text}");
     debugPrint("Gym: $selectedGym");
     debugPrint("Goal: $selectedGoal");
@@ -121,7 +112,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       'frequency': selectedFrequency, // ✅ consistent
       'age': age, // ✅ int, NOT string
       'onboardingComplete': true,
+      'seenUsers': [], // 👈 ADD THIS
+      'likedUsers': [],
     });
+
+    await UserService.loadCurrentUser();
 
     Navigator.push(
       context,

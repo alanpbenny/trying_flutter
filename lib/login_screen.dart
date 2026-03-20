@@ -4,6 +4,10 @@ import 'package:trying_flutter/services/auth_service.dart';
 import 'profile_setup_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'home_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import './models/user_model.dart';
+import 'package:trying_flutter/services/user_service.dart';
+import 'package:trying_flutter/models/current_user.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,97 +20,49 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
-
-  /*
-  Future<void> _signIn() async {
-    setState(() => _isLoading = true);
-    try {
-      await Supabase.instance.client.auth.signInWithPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const ProfileSetupScreen()),
-        );
-      }
-    } on AuthException catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error.message), backgroundColor: Colors.red),
-        );
-      }
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unexpected error occurred'), backgroundColor: Colors.red),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _signUp() async {
-    setState(() => _isLoading = true);
-    try {
-      await Supabase.instance.client.auth.signUp(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Check your email for confirmation!')),
-        );
-      }
-    } on AuthException catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error.message), backgroundColor: Colors.red),
-        );
-      }
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unexpected error occurred'), backgroundColor: Colors.red),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }*/
-
-  flow() async {
+  Future<void> flow() async {
     debugPrint("In flow rn!");
 
+    if (!mounted) return;
+
     setState(() => _isLoading = true);
+
     final user = await AuthService().signInWithGoogle();
+
+    if (!mounted) return; // 🔥 critical
+
     setState(() => _isLoading = false);
 
-    if (user != null && mounted) {
-      debugPrint("Doing the decision!");
+    if (user == null) return;
 
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
+    debugPrint("Doing the decision!");
 
-      final data = userDoc.data();
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
 
-      bool onboardingComplete = data?['onboardingComplete'] ?? false;
+    if (!mounted) return; // 🔥 critical again
 
-      if (onboardingComplete) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-        );
-      } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const ProfileSetupScreen()),
-        );
-      }
+    final data = userDoc.data();
+    bool onboardingComplete = data?['onboardingComplete'] ?? false;
+
+    if (onboardingComplete) {
+      await UserService.loadCurrentUser();
+
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      );
+    } else {
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const ProfileSetupScreen()),
+      );
     }
   }
 

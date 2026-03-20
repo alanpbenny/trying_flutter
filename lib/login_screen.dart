@@ -25,13 +25,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (!mounted) return;
 
-    setState(() => _isLoading = true);
+    //setState(() => _isLoading = true);
 
     final user = await AuthService().signInWithGoogle();
 
     if (!mounted) return; // 🔥 critical
 
-    setState(() => _isLoading = false);
+    //setState(() => _isLoading = false);
 
     if (user == null) return;
 
@@ -43,27 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
         .get();
 
     if (!mounted) return; // 🔥 critical again
-
-    final data = userDoc.data();
-    bool onboardingComplete = data?['onboardingComplete'] ?? false;
-
-    if (onboardingComplete) {
-      await UserService.loadCurrentUser();
-
-      if (!mounted) return;
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-      );
-    } else {
-      if (!mounted) return;
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const ProfileSetupScreen()),
-      );
-    }
+    
   }
 
   @override

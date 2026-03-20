@@ -113,8 +113,7 @@ class SettingsScreen extends StatelessWidget {
              // Navigator.pop(context);
               await AuthService().signOut();
               debugPrint("Logged out");
-
-     
+              Navigator.of(context).popUntil((route) => route.isFirst);
             },
           ),
         ],

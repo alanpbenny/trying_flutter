@@ -4,58 +4,72 @@ import '../login_screen.dart';
 import '../home_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../profile_setup_screen.dart';
+
+
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
+      stream: FirebaseAuth.instance.authStateChanges(), // ✅ FIXED
       builder: (context, authSnapshot) {
-
         if (authSnapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
 
-        // ❌ Not logged in
         if (!authSnapshot.hasData) {
           return const LoginScreen();
         }
 
-        // ✅ Logged in → now check Firestore
-        final user = authSnapshot.data!;
+        return _OnboardingGate(uid: authSnapshot.data!.uid);
+      },
+    );
+  }
+}
 
-        return FutureBuilder<DocumentSnapshot>(
-          future: FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .get(),
-          builder: (context, userSnapshot) {
+class _OnboardingGate extends StatelessWidget {
+  final String uid;
+  const _OnboardingGate({required this.uid});
 
-            if (userSnapshot.connectionState == ConnectionState.waiting) {
-              return const Scaffold(
-                body: Center(child: CircularProgressIndicator()),
-              );
-            }
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<DocumentSnapshot>(
+      future: FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .get(),
+      builder: (context, userSnapshot) {
+        if (userSnapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
 
-            if (!userSnapshot.hasData || !userSnapshot.data!.exists) {
-              // Edge case: user exists in Auth but not Firestore
-              return const LoginScreen(); // or onboarding
-            }
+        if (!userSnapshot.hasData) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
 
-            final data = userSnapshot.data!.data() as Map<String, dynamic>;
+        // 🔥 FIXED: no redirect to login
+        if (!userSnapshot.data!.exists) {
+          return const ProfileSetupScreen();
+        }
 
-            final onboardingComplete = data['onboardingComplete'] ?? false;
+        final data =
+            userSnapshot.data!.data() as Map<String, dynamic>? ?? {};
 
-            if (!onboardingComplete) {
-              return const ProfileSetupScreen(); // 👈 YOU NEED THIS
-            }
+        final onboardingComplete =
+            data['onboardingComplete'] ?? false;
 
-            return const HomeScreen();
-          },
-        );
+        if (!onboardingComplete) {
+          return const ProfileSetupScreen();
+        }
+
+        return const HomeScreen();
       },
     );
   }

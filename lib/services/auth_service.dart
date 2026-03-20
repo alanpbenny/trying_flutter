@@ -13,7 +13,7 @@ class AuthService {
 
         GoogleAuthProvider googleProvider = GoogleAuthProvider()
           ..setCustomParameters({'prompt': 'select_account'});
-          
+
         UserCredential userCredential = await FirebaseAuth.instance
             .signInWithPopup(googleProvider);
 
@@ -62,26 +62,36 @@ class AuthService {
 
   Future<void> signOut() async {
     debugPrint("Signing out...");
-    if (!kIsWeb) {
-      await _googleSignIn.signOut();
+    try {
+      if (!kIsWeb) {
+        await _googleSignIn.signOut();
+      }
+    } catch (e) {
+      debugPrint("Google sign out error: $e");
     }
 
     await FirebaseAuth.instance.signOut();
+    debugPrint("Firebase signed out");
+    debugPrint(
+      "Current user after signout: ${FirebaseAuth.instance.currentUser}",
+    );
   }
-}
 
-Future<void> createUserDocument(User user) async {
-  final userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
-  final doc = await userRef.get();
-  if (!doc.exists) {
-    await userRef.set({
-      'name': user.displayName ?? '',
-      'email': user.email ?? '',
-      'profileImage': user.photoURL ?? '',
-      'createdAt': Timestamp.now(),
-      'onboardingComplete': false,
-      'seenUsers': [],
-      'likedUsers': [],
-    });
+  Future<void> createUserDocument(User user) async {
+    final userRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid);
+    final doc = await userRef.get();
+    if (!doc.exists) {
+      await userRef.set({
+        'name': user.displayName ?? '',
+        'email': user.email ?? '',
+        'profileImage': user.photoURL ?? '',
+        'createdAt': Timestamp.now(),
+        'onboardingComplete': false,
+        'seenUsers': [],
+        'likedUsers': [],
+      });
+    }
   }
 }

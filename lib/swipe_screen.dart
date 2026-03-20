@@ -267,8 +267,9 @@ class _SwipeScreenState extends State<SwipeScreen> {
                                       shape: const CircleBorder(),
                                       padding: const EdgeInsets.all(18),
                                     ),
-                                    onPressed: () {
+                                    onPressed: () async{
                                       removeTopUser();
+                                      await seen(user);
                                       debugPrint("Passed ${user.name}");
                                     },
                                     child: const Icon(Icons.close, size: 28),
@@ -279,10 +280,12 @@ class _SwipeScreenState extends State<SwipeScreen> {
                                       shape: const CircleBorder(),
                                       padding: const EdgeInsets.all(18),
                                     ),
-                                    onPressed: () {
+                                    onPressed: () async {
                                       removeTopUser();
+                                      await seen(user);
 
                                       debugPrint("Liked ${user.name}");
+
                                     },
                                     child: const Icon(Icons.favorite, size: 28),
                                   ),

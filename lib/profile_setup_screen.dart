@@ -105,7 +105,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     debugPrint("Age: $age");
 
     String uid = FirebaseAuth.instance.currentUser!.uid;
-    FirebaseFirestore.instance.collection('users').doc(uid).set({
+    await FirebaseFirestore.instance.collection('users').doc(uid).set({
       'name': nameController.text.trim(),
       'gym': selectedGym,
       'goal': selectedGoal, // ✅ consistent

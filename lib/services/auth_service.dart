@@ -72,15 +72,7 @@ class AuthService {
 
 Future<void> createUserDocument(User user) async {
   final userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
-
   final doc = await userRef.get();
-
-  if (!doc.exists) {
-    Future<void> createUserDocument(User user) async {
-  final userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
-
-  final doc = await userRef.get();
-
   if (!doc.exists) {
     await userRef.set({
       'name': user.displayName ?? '',
@@ -89,9 +81,7 @@ Future<void> createUserDocument(User user) async {
       'createdAt': Timestamp.now(),
       'onboardingComplete': false,
       'seenUsers': [],
-      //'likedUsers': [],
+      'likedUsers': [],
     });
-  }
-}
   }
 }

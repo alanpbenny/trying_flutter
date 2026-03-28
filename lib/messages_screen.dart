@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'messages.dart';
 import 'otherProfile_scree.dart';
 import 'altOtherProfileScreen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/user_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class MessagesScreen extends StatefulWidget {
   const MessagesScreen({super.key});
@@ -16,6 +19,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
 
   bool selectionMode = false;
   Set<String> selectedMessages = {};
+
+  final user = FirebaseAuth.instance.currentUser;
 
   /*
    void openFullProfile(String user) async {
@@ -36,6 +41,30 @@ class _MessagesScreenState extends State<MessagesScreen> {
   }
   */
 
+  List<String> incomingLikes = [];
+
+@override
+void initState() {
+  super.initState();
+  listenToIncomingLikes();
+}
+
+void listenToIncomingLikes() {
+  FirebaseFirestore.instance
+      .collection('users')
+      .doc(user?.uid)
+      .collection('likescReceived')
+      .snapshots()
+      .listen((snapshot) {
+    final users = snapshot.docs
+        .map((doc) => doc['fromUserId'] as String)
+        .toList();
+
+    setState(() {
+      incomingLikes = users;
+    });
+  });
+}
   void acceptMatch(String user) {
     setState(() {
       pendingMatches.remove(user);
@@ -90,6 +119,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
       selectionMode = false;
     });
   }
+
+  
 
   @override
   Widget build(BuildContext context) {

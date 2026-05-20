@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'messages.dart';
-import 'otherProfile_scree.dart';
 import 'altOtherProfileScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/user_service.dart';
@@ -14,70 +13,113 @@ class MessagesScreen extends StatefulWidget {
 }
 
 class _MessagesScreenState extends State<MessagesScreen> {
-  List<String> pendingMatches = ["User 1", "User 2", "User 3", "User 4"];
+  // Pending matches are now purely driven by incomingLikes from Firestore
   List<String> activeMessages = ["Alex", "Jamie", "Chris"];
-
   bool selectionMode = false;
   Set<String> selectedMessages = {};
-
   final user = FirebaseAuth.instance.currentUser;
 
-  /*
-   void openFullProfile(String user) async {
+  List<String> incomingLikes = [];
+  Map<String, String> userNames = {};
+
+  Future<void> fetchUserName(String uid) async {
+  if (userNames.containsKey(uid)) return; // already fetched
+  
+  final doc = await FirebaseFirestore.instance
+      .collection('users')
+      .doc(uid)
+      .get();
+  
+  setState(() {
+    userNames[uid] = doc.data()?['name'] ?? 'Unknown';
+  });
+}
+
+
+  @override
+  void initState() {
+    super.initState();
+    listenToIncomingLikes();
+  }
+
+  void listenToIncomingLikes() {
+    FirebaseFirestore.instance
+        .collection('users')
+        .doc(user?.uid)
+        .collection('likedUsers') // fixed typo: was 'likescReceived'
+        .snapshots()
+        .listen((snapshot) {
+      final users = snapshot.docs
+          .map((doc) => doc['fromUserId'] as String)
+          .toList();
+      setState(() {
+        incomingLikes = users;
+      });
+
+      for (final uid in users) {
+        fetchUserName(uid);
+      }
+    });
+  }
+
+  void openFullProfile(String likerUserId) async {
+    /*
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => OtherProfileScreen(user: user)),
+      MaterialPageRoute(
+        builder: (_) => Altotherprofilescreen(userId: likerUserId),
+      ),
     );
 
     if (result == "Liked") {
-      debugPrint("Moving to next user");
-
-      acceptMatch(user); // For demo, we just accept "User 1". In real app, pass the actual user.
+      acceptMatch(likerUserId);
+    } else if (result == "Passed") {
+      removeMatch(likerUserId);
     }
-
-    if (result == "Passed") {
-      removeMatch(user); // For demo, we just remove "User 1". In real app, pass the actual user.
-    }
+    */
   }
-  */
 
-  List<String> incomingLikes = [];
+  Future<void> acceptMatch(String otherUserId) async {
+    final myUid = user?.uid;
+    if (myUid == null) return;
 
-@override
-void initState() {
-  super.initState();
-  listenToIncomingLikes();
-}
+    final db = FirebaseFirestore.instance;
 
-void listenToIncomingLikes() {
-  FirebaseFirestore.instance
+    // 1. Create a match document for both users
+    final matchId = myUid.compareTo(otherUserId) < 0
+        ? '${myUid}_$otherUserId'
+        : '${otherUserId}_$myUid';
+
+    await db.collection('matches').doc(matchId).set({
+      'users': [myUid, otherUserId],
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+
+    // 2. Remove from likesReceived so the bubble disappears
+    await db
+        .collection('users')
+        .doc(myUid)
+        .collection('likedUsers')
+      .doc(otherUserId)  // direct delete by doc ID, no query needed
+      .delete();
+
+    // 3. Update local active messages list
+    setState(() {
+      activeMessages.insert(0, otherUserId);
+    });
+  }
+
+  Future<void> removeMatch(String otherUserId) async {
+  final myUid = user?.uid;
+  if (myUid == null) return;
+
+  await FirebaseFirestore.instance
       .collection('users')
-      .doc(user?.uid)
-      .collection('likescReceived')
-      .snapshots()
-      .listen((snapshot) {
-    final users = snapshot.docs
-        .map((doc) => doc['fromUserId'] as String)
-        .toList();
-
-    setState(() {
-      incomingLikes = users;
-    });
-  });
+      .doc(myUid)
+      .collection('likedUsers')
+      .doc(otherUserId)  // direct delete by doc ID, no query needed
+      .delete();
 }
-  void acceptMatch(String user) {
-    setState(() {
-      pendingMatches.remove(user);
-      activeMessages.insert(0, user);
-    });
-  }
-
-  void removeMatch(String user) {
-    setState(() {
-      pendingMatches.remove(user);
-      //activeMessages.insert(0, user);
-    });
-  }
 
   void onLongPressMessage(String user) {
     setState(() {
@@ -94,33 +136,27 @@ void listenToIncomingLikes() {
         } else {
           selectedMessages.add(user);
         }
-
         if (selectedMessages.isEmpty) {
           selectionMode = false;
         }
       });
     } else {
-      // TODO: Navigate to chat screen
       Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => OpenedMessagesScreen(user: user),
-                    ),
-                  );
-      debugPrint("Open chat with $user");
+        context,
+        MaterialPageRoute(
+          builder: (context) => OpenedMessagesScreen(user: user),
+        ),
+      );
     }
   }
 
   void deleteSelected() {
     setState(() {
-      activeMessages
-          .removeWhere((user) => selectedMessages.contains(user));
+      activeMessages.removeWhere((user) => selectedMessages.contains(user));
       selectedMessages.clear();
       selectionMode = false;
     });
   }
-
-  
 
   @override
   Widget build(BuildContext context) {
@@ -140,60 +176,86 @@ void listenToIncomingLikes() {
       ),
       body: Column(
         children: [
-          // 🔝 Top Section – Pending Matches
-          Expanded(
-            flex: 1,
-            child: Container(
-              color: Colors.grey[200],
-              padding: const EdgeInsets.only(top: 16),
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                children: pendingMatches.map((user) {
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: GestureDetector(
-                      onTap: () {
-                       //openFullProfile(user);
-                      },
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const CircleAvatar(
-                            radius: 30,
-                            child: Icon(Icons.person),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(user),
-                        ],
+          // 🔝 Top Section – Pending Matches (incoming likes)
+          if (incomingLikes.isNotEmpty)
+            SizedBox(
+              height: 110,
+              child: Container(
+                color: Colors.grey[200],
+                padding: const EdgeInsets.only(top: 12),
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: incomingLikes.length,
+                  itemBuilder: (context, index) {
+                    final likerId = incomingLikes[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: GestureDetector(
+                        onTap: () => openFullProfile(likerId),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Stack(
+                              children: [
+                                const CircleAvatar(
+                                  radius: 30,
+                                  child: Icon(Icons.person),
+                                ),
+                                // 🔴 New-like badge
+                                Positioned(
+                                  right: 0,
+                                  top: 0,
+                                  child: Container(
+                                    width: 14,
+                                    height: 14,
+                                    decoration: const BoxDecoration(
+                                      color: Colors.red,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            SizedBox(
+                              width: 64,
+                              child: Text(
+                                userNames[likerId] ?? 'Loading...',  // instead of just likerId,
+                                textAlign: TextAlign.center,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                }).toList(),
+                    );
+                  },
+                ),
               ),
             ),
-          ),
 
           // 🔽 Bottom Section – Active Messages
           Expanded(
-            flex: 4,
-            child: ListView.builder(
-              itemCount: activeMessages.length,
-              itemBuilder: (context, index) {
-                final user = activeMessages[index];
-                final isSelected = selectedMessages.contains(user);
-
-                return ListTile(
-                  onTap: () => onTapMessage(user),
-                  onLongPress: () => onLongPressMessage(user),
-                  leading: const CircleAvatar(child: Icon(Icons.person)),
-                  title: Text(user),
-                  subtitle: const Text("Say hi 👋"),
-                  selected: isSelected,
-                  selectedTileColor: Colors.blue.withOpacity(0.2),
-                );
-              },
-            ),
+            child: activeMessages.isEmpty
+                ? const Center(child: Text("No messages yet"))
+                : ListView.builder(
+                    itemCount: activeMessages.length,
+                    itemBuilder: (context, index) {
+                      final u = activeMessages[index];
+                      final isSelected = selectedMessages.contains(u);
+                      return ListTile(
+                        onTap: () => onTapMessage(u),
+                        onLongPress: () => onLongPressMessage(u),
+                        leading: const CircleAvatar(child: Icon(Icons.person)),
+                        title: Text(u),
+                        subtitle: const Text("Say hi 👋"),
+                        selected: isSelected,
+                        selectedTileColor: Colors.blue.withOpacity(0.2),
+                      );
+                    },
+                  ),
           ),
         ],
       ),

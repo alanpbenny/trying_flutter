@@ -101,6 +101,17 @@ class _SwipeScreenState extends State<SwipeScreen> {
     });
 }
 
+ Future<void> liked(UserModel user) async {
+    debugPrint("Like function called");
+    
+    await FirebaseFirestore.instance
+      .collection('users')
+      .doc(user.id)
+      .collection('likedUsers')   // subcollection
+      .doc(currentUserId)
+      .set({'fromUserId': currentUserId, 'createdAt': FieldValue.serverTimestamp()});
+}
+
   void removeTopUser() {
     if (users.isEmpty) return;
 
@@ -283,6 +294,7 @@ class _SwipeScreenState extends State<SwipeScreen> {
                                     onPressed: () async {
                                       removeTopUser();
                                       await seen(user);
+                                      await liked(user);
 
                                       debugPrint("Liked ${user.name}");
 

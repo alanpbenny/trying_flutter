@@ -4,7 +4,7 @@ import '../models/user_model.dart';
 class OtherProfileScreen extends StatelessWidget {
   final UserModel user;
 
-  OtherProfileScreen({super.key, required this.user});
+  const OtherProfileScreen({super.key, required this.user});
 
   @override
   Widget build(BuildContext context) {

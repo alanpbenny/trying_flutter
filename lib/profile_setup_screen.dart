@@ -19,7 +19,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   String selectedGoal = 'Muscle Gain';
   String selectedGym = 'Western Rec Centre';
   String selectedFrequency = '3-4 times/week';
-  bool _isLoading = false;
+  final bool _isLoading = false;
   /*
   Future<void> _saveProfile() async {
     final user = Supabase.instance.client.auth.currentUser;

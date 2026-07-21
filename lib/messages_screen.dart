@@ -63,7 +63,6 @@ class _MessagesScreenState extends State<MessagesScreen> {
   }
 
   void openFullProfile(String likerUserId) async {
-    /*
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -76,7 +75,6 @@ class _MessagesScreenState extends State<MessagesScreen> {
     } else if (result == "Passed") {
       removeMatch(likerUserId);
     }
-    */
   }
 
   Future<void> acceptMatch(String otherUserId) async {

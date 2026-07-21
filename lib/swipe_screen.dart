@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'models/user.dart';
-import 'services/mock_data.dart';
 import 'package:trying_flutter/otherProfile_scree.dart';
 import '../models/user_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/current_user.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class SwipeScreen extends StatefulWidget {

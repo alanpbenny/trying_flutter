@@ -3,9 +3,7 @@ import 'package:flutter/material.dart';
 //import 'edit_profile_screen.dart';
 import 'profile_setup_screen.dart';
 import 'settings.dart';
-import './models/user_model.dart';
 import 'package:trying_flutter/services/user_service.dart';
-import 'package:trying_flutter/models/current_user.dart';
 //currentUser = UserModel();
 
 class ProfileScreen extends StatefulWidget {

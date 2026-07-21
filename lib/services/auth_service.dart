@@ -6,7 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class AuthService {
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
 
-  signInWithGoogle() async {
+  Future<User?>? signInWithGoogle() async {
     try {
       if (kIsWeb) {
         debugPrint("In Web AUTH!");
@@ -31,13 +31,13 @@ class AuthService {
         );
       }
 
-      final GoogleSignInAccount? googleUser = await _googleSignIn
+      final GoogleSignInAccount googleUser = await _googleSignIn
           .authenticate();
 
       if (googleUser == null) return null;
 
       final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
+          googleUser.authentication;
 
       final credential = GoogleAuthProvider.credential(
         idToken: googleAuth.idToken,

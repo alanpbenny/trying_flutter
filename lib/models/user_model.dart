@@ -5,6 +5,8 @@ class UserModel {
   final String gym;
   final String goal;
   final String frequency;
+  final String? photoUrl;
+
 
   UserModel({
     required this.id,
@@ -13,6 +15,7 @@ class UserModel {
     required this.gym,
     required this.goal,
     required this.frequency,
+    this.photoUrl
   });
 
   factory UserModel.fromFirestore(Map<String, dynamic> data, String id) {
@@ -23,6 +26,8 @@ class UserModel {
       gym: data['gym'] ?? '',
       goal: data['goal'] ?? '',
       frequency: data['frequency'] ?? '',
+      photoUrl: data['photoUrl'],
+
 
 
     );

@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 //import 'package:supabase_flutter/supabase_flutter.dart';
 import 'home_screen.dart';
@@ -5,6 +6,8 @@ import '../models/current_user.dart';
 import '../models/user_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
 import '../services/user_service.dart';
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -19,7 +22,49 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   String selectedGoal = 'Muscle Gain';
   String selectedGym = 'Western Rec Centre';
   String selectedFrequency = '3-4 times/week';
-  final bool _isLoading = false;
+  bool _isLoading = false;
+
+  Uint8List? _pickedImageBytes;
+  bool _isUploadingPhoto = false;
+
+  Future<void> pickProfilePhoto() async {
+    final picker = ImagePicker();
+    final XFile? picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1024,
+      imageQuality: 85,
+    );
+
+    if (picked == null) return;
+
+    final bytes = await picked.readAsBytes();
+    setState(() {
+      _pickedImageBytes = bytes;
+    });
+  }
+
+  /// Uploads the picked photo (if any) to Firebase Storage and returns its
+  /// download URL. Returns null if the user never picked a photo.
+  Future<String?> _uploadProfilePhotoIfNeeded(String uid) async {
+    if (_pickedImageBytes == null) return null;
+
+    setState(() => _isUploadingPhoto = true);
+    try {
+      final ref = FirebaseStorage.instance
+          .ref()
+          .child('profile_photos')
+          .child('$uid.jpg');
+
+      await ref.putData(
+        _pickedImageBytes!,
+        SettableMetadata(contentType: 'image/jpeg'),
+      );
+
+      return await ref.getDownloadURL();
+    } finally {
+      if (mounted) setState(() => _isUploadingPhoto = false);
+    }
+  }
   /*
   Future<void> _saveProfile() async {
     final user = Supabase.instance.client.auth.currentUser;
@@ -104,7 +149,24 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     debugPrint("DOB: $selectedDOB");
     debugPrint("Age: $age");
 
+    setState(() => _isLoading = true);
+
     String uid = FirebaseAuth.instance.currentUser!.uid;
+
+    String? photoUrl;
+    try {
+      photoUrl = await _uploadProfilePhotoIfNeeded(uid);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Couldn't upload photo, saving profile without it"),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    }
+
     await FirebaseFirestore.instance.collection('users').doc(uid).set({
       'name': nameController.text.trim(),
       'gym': selectedGym,
@@ -114,9 +176,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       'onboardingComplete': true,
       'seenUsers': [], // 👈 ADD THIS
       'likedUsers': [],
+      if (photoUrl != null) 'photoUrl': photoUrl,
     });
 
     await UserService.loadCurrentUser();
+
+    if (mounted) setState(() => _isLoading = false);
 
     Navigator.push(
       context,
@@ -139,43 +204,64 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           children: [
             // 🔵 Profile Picture
             Center(
-              child: Stack(
-                children: [
-                  Container(
-                    width: 200,
-                    height: 200,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(16),
+              child: GestureDetector(
+                onTap: pickProfilePhoto,
+                child: Stack(
+                  children: [
+                    Container(
+                      width: 200,
+                      height: 200,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(16),
+                        image: _pickedImageBytes != null
+                            ? DecorationImage(
+                                image: MemoryImage(_pickedImageBytes!),
+                                fit: BoxFit.cover,
+                              )
+                            : null,
+                      ),
+                      child: _pickedImageBytes == null
+                          ? const Icon(
+                              Icons.person,
+                              size: 80,
+                              color: Colors.white,
+                            )
+                          : null,
                     ),
-                    child: const Icon(
-                      Icons.person,
-                      size: 80,
-                      color: Colors.white,
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: GestureDetector(
-                      onTap: () {
-                        debugPrint("Add photo tapped");
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: const BoxDecoration(
-                          color: Colors.blue,
-                          shape: BoxShape.circle,
+                    if (_isUploadingPhoto)
+                      Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.4),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Center(
+                            child: CircularProgressIndicator(color: Colors.white),
+                          ),
                         ),
-                        child: const Icon(
-                          Icons.add,
-                          size: 40,
-                          color: Colors.white,
+                      ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: GestureDetector(
+                        onTap: pickProfilePhoto,
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: const BoxDecoration(
+                            color: Colors.blue,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.add,
+                            size: 40,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
 
@@ -300,8 +386,17 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             const SizedBox(height: 32),
 
             ElevatedButton(
-              onPressed: handleContinue,
-              child: const Text("Continue"),
+              onPressed: _isLoading ? null : handleContinue,
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text("Continue"),
             ),
           ],
         ),

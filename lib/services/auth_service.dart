@@ -34,8 +34,6 @@ class AuthService {
       final GoogleSignInAccount googleUser = await _googleSignIn
           .authenticate();
 
-      if (googleUser == null) return null;
-
       final GoogleSignInAuthentication googleAuth =
           googleUser.authentication;
 

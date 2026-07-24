@@ -2,8 +2,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 //import 'package:supabase_flutter/supabase_flutter.dart';
 import 'home_screen.dart';
-import '../models/current_user.dart';
-import '../models/user_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -153,14 +151,15 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
     String uid = FirebaseAuth.instance.currentUser!.uid;
 
-    String? photoUrl;
+  String? photoUrl;
     try {
       photoUrl = await _uploadProfilePhotoIfNeeded(uid);
     } catch (e) {
+      debugPrint("Photo upload failed: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Couldn't upload photo, saving profile without it"),
+          SnackBar(
+            content: Text("Couldn't upload photo: $e"),
             backgroundColor: Colors.orange,
           ),
         );

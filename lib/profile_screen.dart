@@ -47,7 +47,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Center(
+            const Center( //This neads to be updated to a profile pic retrieval from firebase storage
               child: CircleAvatar(
                 radius: 80,
                 child: Icon(Icons.person, size: 80),

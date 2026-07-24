@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../models/current_user.dart';
 import '../models/user_model.dart';
 class OtherProfileScreen extends StatelessWidget {
   final UserModel user;

@@ -1,13 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:trying_flutter/services/auth_service.dart';
 //import 'package:supabase_flutter/supabase_flutter.dart';
-import 'profile_setup_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'home_screen.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import './models/user_model.dart';
-import 'package:trying_flutter/services/user_service.dart';
-import 'package:trying_flutter/models/current_user.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'messages.dart';
 import 'altOtherProfileScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../services/user_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class MessagesScreen extends StatefulWidget {

@@ -94,20 +94,23 @@ class _SwipeScreenState extends State<SwipeScreen> {
         .collection('users')
         .doc(currentUserId)
         .update({
-      'seenUsers': FieldValue.arrayUnion([user.id]),
-    });
-}
+          'seenUsers': FieldValue.arrayUnion([user.id]),
+        });
+  }
 
- Future<void> liked(UserModel user) async {
+  Future<void> liked(UserModel user) async {
     debugPrint("Like function called");
-    
+
     await FirebaseFirestore.instance
-      .collection('users')
-      .doc(user.id)
-      .collection('likedUsers')   // subcollection
-      .doc(currentUserId)
-      .set({'fromUserId': currentUserId, 'createdAt': FieldValue.serverTimestamp()});
-}
+        .collection('users')
+        .doc(user.id)
+        .collection('likedUsers') // subcollection
+        .doc(currentUserId)
+        .set({
+          'fromUserId': currentUserId,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+  }
 
   void removeTopUser() {
     if (users.isEmpty) return;
@@ -174,7 +177,6 @@ class _SwipeScreenState extends State<SwipeScreen> {
                   }
                   await seen(user);
                   removeTopUser();
-                  
                 },
                 background: Container(
                   alignment: Alignment.centerLeft,
@@ -213,15 +215,40 @@ class _SwipeScreenState extends State<SwipeScreen> {
                     child: Stack(
                       children: [
                         // 🔥 Full background image (placeholder for now)
+                        // 🔥 Full background image (real photo if available)
                         Positioned.fill(
-                          child: Container(
-                            color: Colors.grey[300],
-                            child: const Icon(
-                              Icons.person,
-                              size: 120,
-                              color: Colors.grey,
-                            ),
-                          ),
+                          child: user.photoUrl != null
+                              ? Image.network(
+                                  user.photoUrl!,
+                                  fit: BoxFit.cover,
+                                  loadingBuilder: (context, child, progress) {
+                                    if (progress == null) return child;
+                                    return Container(
+                                      color: Colors.grey[300],
+                                      child: const Center(
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                    );
+                                  },
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      color: Colors.grey[300],
+                                      child: const Icon(
+                                        Icons.person,
+                                        size: 120,
+                                        color: Colors.grey,
+                                      ),
+                                    );
+                                  },
+                                )
+                              : Container(
+                                  color: Colors.grey[300],
+                                  child: const Icon(
+                                    Icons.person,
+                                    size: 120,
+                                    color: Colors.grey,
+                                  ),
+                                ),
                         ),
 
                         // 🌫️ Gradient for text readability
@@ -275,7 +302,7 @@ class _SwipeScreenState extends State<SwipeScreen> {
                                       shape: const CircleBorder(),
                                       padding: const EdgeInsets.all(18),
                                     ),
-                                    onPressed: () async{
+                                    onPressed: () async {
                                       removeTopUser();
                                       await seen(user);
                                       debugPrint("Passed ${user.name}");
@@ -294,7 +321,6 @@ class _SwipeScreenState extends State<SwipeScreen> {
                                       await liked(user);
 
                                       debugPrint("Liked ${user.name}");
-
                                     },
                                     child: const Icon(Icons.favorite, size: 28),
                                   ),

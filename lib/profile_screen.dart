@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'profile_setup_screen.dart';
 import 'settings.dart';
 import 'package:trying_flutter/services/user_service.dart';
+
 //currentUser = UserModel();
+bool _photoFailed = false;
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -47,10 +49,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Center( //This neads to be updated to a profile pic retrieval from firebase storage
+            Center(
               child: CircleAvatar(
                 radius: 80,
-                child: Icon(Icons.person, size: 80),
+                backgroundImage: user?.photoUrl != null
+                    ? NetworkImage(user!.photoUrl!)
+                    : null,
+                onBackgroundImageError: (exception, stackTrace) {
+                  debugPrint("Failed to load profile image: $exception");
+                  if (mounted) setState(() => _photoFailed = true);
+                },
+                child: user?.photoUrl == null
+                    ? const Icon(Icons.person, size: 80)
+                    : null,
               ),
             ),
             Center(

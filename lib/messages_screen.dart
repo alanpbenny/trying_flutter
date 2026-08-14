@@ -20,20 +20,21 @@ class _MessagesScreenState extends State<MessagesScreen> {
 
   List<String> incomingLikes = [];
   Map<String, String> userNames = {};
+  Map<String, String?> userPhotos = {};
 
   Future<void> fetchUserName(String uid) async {
-  if (userNames.containsKey(uid)) return; // already fetched
-  
-  final doc = await FirebaseFirestore.instance
-      .collection('users')
-      .doc(uid)
-      .get();
-  
-  setState(() {
-    userNames[uid] = doc.data()?['name'] ?? 'Unknown';
-  });
-}
+    if (userNames.containsKey(uid)) return; // already fetched
 
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .get();
+
+    setState(() {
+      userNames[uid] = doc.data()?['name'] ?? 'Unknown';
+      userPhotos[uid] = doc.data()?['photoUrl'] as String?;
+    });
+  }
 
   @override
   void initState() {
@@ -48,17 +49,17 @@ class _MessagesScreenState extends State<MessagesScreen> {
         .collection('likedUsers') // fixed typo: was 'likescReceived'
         .snapshots()
         .listen((snapshot) {
-      final users = snapshot.docs
-          .map((doc) => doc['fromUserId'] as String)
-          .toList();
-      setState(() {
-        incomingLikes = users;
-      });
+          final users = snapshot.docs
+              .map((doc) => doc['fromUserId'] as String)
+              .toList();
+          setState(() {
+            incomingLikes = users;
+          });
 
-      for (final uid in users) {
-        fetchUserName(uid);
-      }
-    });
+          for (final uid in users) {
+            fetchUserName(uid);
+          }
+        });
   }
 
   void openFullProfile(String likerUserId) async {
@@ -97,8 +98,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
         .collection('users')
         .doc(myUid)
         .collection('likedUsers')
-      .doc(otherUserId)  // direct delete by doc ID, no query needed
-      .delete();
+        .doc(otherUserId) // direct delete by doc ID, no query needed
+        .delete();
 
     // 3. Update local active messages list
     setState(() {
@@ -107,16 +108,16 @@ class _MessagesScreenState extends State<MessagesScreen> {
   }
 
   Future<void> removeMatch(String otherUserId) async {
-  final myUid = user?.uid;
-  if (myUid == null) return;
+    final myUid = user?.uid;
+    if (myUid == null) return;
 
-  await FirebaseFirestore.instance
-      .collection('users')
-      .doc(myUid)
-      .collection('likedUsers')
-      .doc(otherUserId)  // direct delete by doc ID, no query needed
-      .delete();
-}
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(myUid)
+        .collection('likedUsers')
+        .doc(otherUserId) // direct delete by doc ID, no query needed
+        .delete();
+  }
 
   void onLongPressMessage(String user) {
     setState(() {
@@ -167,7 +168,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                 IconButton(
                   icon: const Icon(Icons.delete),
                   onPressed: deleteSelected,
-                )
+                ),
               ]
             : [],
       ),
@@ -176,7 +177,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
           // 🔝 Top Section – Pending Matches (incoming likes)
           if (incomingLikes.isNotEmpty)
             SizedBox(
-              height: 110,
+              height:120,
               child: Container(
                 color: Colors.grey[200],
                 padding: const EdgeInsets.only(top: 12),
@@ -186,6 +187,9 @@ class _MessagesScreenState extends State<MessagesScreen> {
                   itemCount: incomingLikes.length,
                   itemBuilder: (context, index) {
                     final likerId = incomingLikes[index];
+                    final likerName = userNames[likerId];
+                    final likerPhotoUrl = userPhotos[likerId];
+
                     return Padding(
                       padding: const EdgeInsets.only(right: 12),
                       child: GestureDetector(
@@ -193,36 +197,55 @@ class _MessagesScreenState extends State<MessagesScreen> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Stack(
-                              children: [
-                                const CircleAvatar(
-                                  radius: 30,
-                                  child: Icon(Icons.person),
-                                ),
-                                // 🔴 New-like badge
-                                Positioned(
-                                  right: 0,
-                                  top: 0,
-                                  child: Container(
-                                    width: 14,
-                                    height: 14,
-                                    decoration: const BoxDecoration(
-                                      color: Colors.red,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
-                            SizedBox(
-                              width: 64,
-                              child: Text(
-                                userNames[likerId] ?? 'Loading...',  // instead of just likerId,
-                                textAlign: TextAlign.center,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontSize: 12),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(40),
+                              child: SizedBox(
+                                width: 80,
+                                height: 80,
+                                child: likerPhotoUrl != null
+                                    ? Image.network(
+                                        likerPhotoUrl,
+                                        fit: BoxFit.cover,
+                                        loadingBuilder:
+                                            (context, child, progress) {
+                                              if (progress == null) {
+                                                return child;
+                                              }
+                                              return Container(
+                                                color: Colors.grey[300],
+                                                child: const Center(
+                                                  child:
+                                                      CircularProgressIndicator(),
+                                                ),
+                                              );
+                                            },
+                                        errorBuilder:
+                                            (context, error, stackTrace) {
+                                              return Container(
+                                                color: Colors.grey[300],
+                                                child: const Icon(
+                                                  Icons.person,
+                                                  size: 40,
+                                                  color: Colors.grey,
+                                                ),
+                                              );
+                                            },
+                                      )
+                                    : Container(
+                                        color: Colors.grey[300],
+                                        child: const Icon(
+                                          Icons.person,
+                                          size: 40,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
                               ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              likerName ?? '...',
+                              style: const TextStyle(fontSize: 12),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),

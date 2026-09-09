@@ -12,8 +12,6 @@ class MessagesScreen extends StatefulWidget {
 }
 
 class _MessagesScreenState extends State<MessagesScreen> {
-  // Pending matches are now purely driven by incomingLikes from Firestore
-  List<String> activeMessages = ["Alex", "Jamie", "Chris"];
   bool selectionMode = false;
   Set<String> selectedMessages = {};
   final user = FirebaseAuth.instance.currentUser;
@@ -21,6 +19,10 @@ class _MessagesScreenState extends State<MessagesScreen> {
   List<String> incomingLikes = [];
   Map<String, String> userNames = {};
   Map<String, String?> userPhotos = {};
+
+  // 🔽 Active matches now come from Firestore, not a static list.
+  // matchId -> other user's uid
+  Map<String, String> activeMatches = {};
 
   Future<void> fetchUserName(String uid) async {
     if (userNames.containsKey(uid)) return; // already fetched
@@ -40,6 +42,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
   void initState() {
     super.initState();
     listenToIncomingLikes();
+    listenToActiveMatches();
   }
 
   void listenToIncomingLikes() {
@@ -58,6 +61,39 @@ class _MessagesScreenState extends State<MessagesScreen> {
 
           for (final uid in users) {
             fetchUserName(uid);
+          }
+        });
+  }
+
+  void listenToActiveMatches() {
+    final myUid = user?.uid;
+    if (myUid == null) return;
+
+    FirebaseFirestore.instance
+        .collection('matches')
+        .where('users', arrayContains: myUid)
+        .snapshots()
+        .listen((snapshot) {
+          final matches = <String, String>{};
+
+          for (final doc in snapshot.docs) {
+            final users = List<String>.from(doc.data()['users'] ?? []);
+            // The other person is whichever uid in the array isn't me.
+            final otherUserId = users.firstWhere(
+              (id) => id != myUid,
+              orElse: () => '',
+            );
+            if (otherUserId.isEmpty) continue; // shouldn't happen, but guard
+
+            matches[doc.id] = otherUserId;
+          }
+
+          setState(() {
+            activeMatches = matches;
+          });
+
+          for (final otherUserId in matches.values) {
+            fetchUserName(otherUserId);
           }
         });
   }
@@ -101,10 +137,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
         .doc(otherUserId) // direct delete by doc ID, no query needed
         .delete();
 
-    // 3. Update local active messages list
-    setState(() {
-      activeMessages.insert(0, otherUserId);
-    });
+    // Active matches list updates automatically via listenToActiveMatches
+    // since it's a live snapshot listener — no manual setState needed here.
   }
 
   Future<void> removeMatch(String otherUserId) async {
@@ -119,20 +153,20 @@ class _MessagesScreenState extends State<MessagesScreen> {
         .delete();
   }
 
-  void onLongPressMessage(String user) {
+  void onLongPressMessage(String matchId) {
     setState(() {
       selectionMode = true;
-      selectedMessages.add(user);
+      selectedMessages.add(matchId);
     });
   }
 
-  void onTapMessage(String user) {
+  void onTapMessage(String matchId, String otherUserId) {
     if (selectionMode) {
       setState(() {
-        if (selectedMessages.contains(user)) {
-          selectedMessages.remove(user);
+        if (selectedMessages.contains(matchId)) {
+          selectedMessages.remove(matchId);
         } else {
-          selectedMessages.add(user);
+          selectedMessages.add(matchId);
         }
         if (selectedMessages.isEmpty) {
           selectionMode = false;
@@ -142,15 +176,18 @@ class _MessagesScreenState extends State<MessagesScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => OpenedMessagesScreen(user: user),
+          builder: (context) => OpenedMessagesScreen(user: otherUserId),
         ),
       );
     }
   }
 
   void deleteSelected() {
+    // Deletes the match doc(s) for whatever's selected — removes the chat for both users.
+    for (final matchId in selectedMessages) {
+      FirebaseFirestore.instance.collection('matches').doc(matchId).delete();
+    }
     setState(() {
-      activeMessages.removeWhere((user) => selectedMessages.contains(user));
       selectedMessages.clear();
       selectionMode = false;
     });
@@ -158,6 +195,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final matchIds = activeMatches.keys.toList();
+
     return Scaffold(
       appBar: AppBar(
         title: selectionMode
@@ -177,10 +216,10 @@ class _MessagesScreenState extends State<MessagesScreen> {
           // 🔝 Top Section – Pending Matches (incoming likes)
           if (incomingLikes.isNotEmpty)
             SizedBox(
-              height:120,
+              height: 120,
               child: Container(
                 color: Colors.grey[200],
-                padding: const EdgeInsets.only(top: 12),
+                padding: const EdgeInsets.only(top: 8),
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -242,10 +281,14 @@ class _MessagesScreenState extends State<MessagesScreen> {
                               ),
                             ),
                             const SizedBox(height: 2),
-                            Text(
-                              likerName ?? '...',
-                              style: const TextStyle(fontSize: 12),
-                              overflow: TextOverflow.ellipsis,
+                            SizedBox(
+                              width: 80,
+                              child: Text(
+                                likerName ?? '...',
+                                style: const TextStyle(fontSize: 12),
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                              ),
                             ),
                           ],
                         ),
@@ -256,20 +299,32 @@ class _MessagesScreenState extends State<MessagesScreen> {
               ),
             ),
 
-          // 🔽 Bottom Section – Active Messages
+          // 🔽 Bottom Section – Active Messages (real matches from Firestore)
           Expanded(
-            child: activeMessages.isEmpty
+            child: matchIds.isEmpty
                 ? const Center(child: Text("No messages yet"))
                 : ListView.builder(
-                    itemCount: activeMessages.length,
+                    itemCount: matchIds.length,
                     itemBuilder: (context, index) {
-                      final u = activeMessages[index];
-                      final isSelected = selectedMessages.contains(u);
+                      final matchId = matchIds[index];
+                      final otherUserId = activeMatches[matchId]!;
+                      final otherUserName =
+                          userNames[otherUserId] ?? 'Loading...';
+                      final otherUserPhoto = userPhotos[otherUserId];
+                      final isSelected = selectedMessages.contains(matchId);
+
                       return ListTile(
-                        onTap: () => onTapMessage(u),
-                        onLongPress: () => onLongPressMessage(u),
-                        leading: const CircleAvatar(child: Icon(Icons.person)),
-                        title: Text(u),
+                        onTap: () => onTapMessage(matchId, otherUserId),
+                        onLongPress: () => onLongPressMessage(matchId),
+                        leading: CircleAvatar(
+                          backgroundImage: otherUserPhoto != null
+                              ? NetworkImage(otherUserPhoto)
+                              : null,
+                          child: otherUserPhoto == null
+                              ? const Icon(Icons.person)
+                              : null,
+                        ),
+                        title: Text(otherUserName),
                         subtitle: const Text("Say hi 👋"),
                         selected: isSelected,
                         selectedTileColor: Colors.blue.withOpacity(0.2),

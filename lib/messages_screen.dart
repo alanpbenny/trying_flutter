@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'messages.dart';
 import 'altOtherProfileScreen.dart';
@@ -20,22 +21,36 @@ class _MessagesScreenState extends State<MessagesScreen> {
   Map<String, String> userNames = {};
   Map<String, String?> userPhotos = {};
 
-  // 🔽 Active matches now come from Firestore, not a static list.
-  // matchId -> other user's uid
+  // matchId -> other user's uid, populated live from Firestore.
   Map<String, String> activeMatches = {};
 
+  // Fix #1: hold onto the stream subscriptions so we can cancel them in
+  // dispose(). Without this, both listeners keep firing after the user
+  // navigates away and setState() gets called on an unmounted widget.
+  StreamSubscription<QuerySnapshot>? _likesSub;
+  StreamSubscription<QuerySnapshot>? _matchesSub;
+
+  // Fetches and caches a user's display name + photo the first time we see
+  // their uid (as an incoming like or as the other side of a match).
+  // Cheap no-op on repeat calls since it checks userNames first.
   Future<void> fetchUserName(String uid) async {
     if (userNames.containsKey(uid)) return; // already fetched
 
-    final doc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .get();
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .get();
 
-    setState(() {
-      userNames[uid] = doc.data()?['name'] ?? 'Unknown';
-      userPhotos[uid] = doc.data()?['photoUrl'] as String?;
-    });
+      if (!mounted) return; // widget could've been disposed while awaiting
+
+      setState(() {
+        userNames[uid] = doc.data()?['name'] ?? 'Unknown';
+        userPhotos[uid] = doc.data()?['photoUrl'] as String?;
+      });
+    } catch (e) {
+      debugPrint('fetchUserName failed for $uid: $e');
+    }
   }
 
   @override
@@ -45,59 +60,89 @@ class _MessagesScreenState extends State<MessagesScreen> {
     listenToActiveMatches();
   }
 
-  void listenToIncomingLikes() {
-    FirebaseFirestore.instance
-        .collection('users')
-        .doc(user?.uid)
-        .collection('likedUsers') // fixed typo: was 'likescReceived'
-        .snapshots()
-        .listen((snapshot) {
-          final users = snapshot.docs
-              .map((doc) => doc['fromUserId'] as String)
-              .toList();
-          setState(() {
-            incomingLikes = users;
-          });
-
-          for (final uid in users) {
-            fetchUserName(uid);
-          }
-        });
+  // Fix #1: cancel both listeners when this screen is disposed.
+  @override
+  void dispose() {
+    _likesSub?.cancel();
+    _matchesSub?.cancel();
+    super.dispose();
   }
 
+  // Listens for people who have liked the current user (the "likedUsers"
+  // subcollection under my own doc holds INCOMING likes — doc ID is the
+  // liker's uid). Drives the horizontal "pending matches" bubble row.
+  void listenToIncomingLikes() {
+    final myUid = user?.uid;
+    // Fix #2: this guard was missing before — calling .doc(null) if auth
+    // state hasn't resolved yet would throw.
+    if (myUid == null) return;
+
+    _likesSub = FirebaseFirestore.instance
+        .collection('users')
+        .doc(myUid)
+        .collection('likedUsers')
+        .snapshots()
+        .listen(
+          (snapshot) {
+            if (!mounted) return;
+
+            final users = snapshot.docs
+                .map((doc) => doc['fromUserId'] as String)
+                .toList();
+            setState(() {
+              incomingLikes = users;
+            });
+
+            for (final uid in users) {
+              fetchUserName(uid);
+            }
+          },
+          onError: (e) => debugPrint('listenToIncomingLikes error: $e'),
+        );
+  }
+
+  // Listens for match documents that contain the current user, and derives
+  // a matchId -> otherUserId map for the "active messages" list below.
   void listenToActiveMatches() {
     final myUid = user?.uid;
     if (myUid == null) return;
 
-    FirebaseFirestore.instance
+    _matchesSub = FirebaseFirestore.instance
         .collection('matches')
         .where('users', arrayContains: myUid)
         .snapshots()
-        .listen((snapshot) {
-          final matches = <String, String>{};
+        .listen(
+          (snapshot) {
+            if (!mounted) return;
 
-          for (final doc in snapshot.docs) {
-            final users = List<String>.from(doc.data()['users'] ?? []);
-            // The other person is whichever uid in the array isn't me.
-            final otherUserId = users.firstWhere(
-              (id) => id != myUid,
-              orElse: () => '',
-            );
-            if (otherUserId.isEmpty) continue; // shouldn't happen, but guard
+            final matches = <String, String>{};
 
-            matches[doc.id] = otherUserId;
-          }
+            for (final doc in snapshot.docs) {
+              final users = List<String>.from(doc.data()['users'] ?? []);
+              // The other person is whichever uid in the array isn't me.
+              final otherUserId = users.firstWhere(
+                (id) => id != myUid,
+                orElse: () => '',
+              );
+              if (otherUserId.isEmpty) continue; // shouldn't happen, but guard
 
-          setState(() {
-            activeMatches = matches;
-          });
+              matches[doc.id] = otherUserId;
+            }
 
-          for (final otherUserId in matches.values) {
-            fetchUserName(otherUserId);
-          }
-        });
+            setState(() {
+              activeMatches = matches;
+            });
+
+            for (final otherUserId in matches.values) {
+              fetchUserName(otherUserId);
+            }
+          },
+          onError: (e) => debugPrint('listenToActiveMatches error: $e'),
+        );
   }
 
+  // Opens the full profile screen for someone who liked you, and applies
+  // whatever decision (like/pass) they made when they come back.
   void openFullProfile(String likerUserId) async {
     final result = await Navigator.push(
       context,
@@ -106,6 +151,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
       ),
     );
 
+    if (!mounted) return;
+
     if (result == "Liked") {
       acceptMatch(likerUserId);
     } else if (result == "Passed") {
@@ -113,46 +160,77 @@ class _MessagesScreenState extends State<MessagesScreen> {
     }
   }
 
+  // Turns an incoming like into a real match: creates the shared match doc
+  // and removes the like so its bubble disappears from the top row.
   Future<void> acceptMatch(String otherUserId) async {
     final myUid = user?.uid;
     if (myUid == null) return;
 
     final db = FirebaseFirestore.instance;
 
-    // 1. Create a match document for both users
+    // Deterministic match ID regardless of who accepts whom, so both users
+    // land on the same document.
     final matchId = myUid.compareTo(otherUserId) < 0
         ? '${myUid}_$otherUserId'
         : '${otherUserId}_$myUid';
 
-    await db.collection('matches').doc(matchId).set({
+    // Fix #3: both writes now go through a single batch so they either both
+    // succeed or both fail — no more risk of a match existing while the
+    // "incoming like" bubble is still stuck on screen (or vice versa).
+    final batch = db.batch();
+
+    batch.set(db.collection('matches').doc(matchId), {
       'users': [myUid, otherUserId],
       'createdAt': FieldValue.serverTimestamp(),
     });
 
-    // 2. Remove from likesReceived so the bubble disappears
-    await db
-        .collection('users')
-        .doc(myUid)
-        .collection('likedUsers')
-        .doc(otherUserId) // direct delete by doc ID, no query needed
-        .delete();
+    batch.delete(
+      db
+          .collection('users')
+          .doc(myUid)
+          .collection('likedUsers')
+          .doc(otherUserId), // direct delete by doc ID, no query needed
+    );
 
-    // Active matches list updates automatically via listenToActiveMatches
-    // since it's a live snapshot listener — no manual setState needed here.
+    // Fix #4: wrap in try/catch so a failed commit doesn't throw unhandled
+    // and silently leave the UI out of sync with Firestore.
+    try {
+      await batch.commit();
+      // No manual setState needed here — listenToActiveMatches and
+      // listenToIncomingLikes both pick up the change live.
+    } catch (e) {
+      debugPrint('acceptMatch failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not accept match. Try again.')),
+        );
+      }
+    }
   }
 
+  // Declines an incoming like: just removes it, no match doc is created.
   Future<void> removeMatch(String otherUserId) async {
     final myUid = user?.uid;
     if (myUid == null) return;
 
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(myUid)
-        .collection('likedUsers')
-        .doc(otherUserId) // direct delete by doc ID, no query needed
-        .delete();
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(myUid)
+          .collection('likedUsers')
+          .doc(otherUserId)
+          .delete();
+    } catch (e) {
+      debugPrint('removeMatch failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not remove like. Try again.')),
+        );
+      }
+    }
   }
 
+  // Long-pressing a match row enters multi-select mode for deletion.
   void onLongPressMessage(String matchId) {
     setState(() {
       selectionMode = true;
@@ -160,6 +238,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
     });
   }
 
+  // Tapping a match row either toggles its selection (in selection mode)
+  // or opens the chat with that match.
   void onTapMessage(String matchId, String otherUserId) {
     if (selectionMode) {
       setState(() {
@@ -182,11 +262,33 @@ class _MessagesScreenState extends State<MessagesScreen> {
     }
   }
 
-  void deleteSelected() {
-    // Deletes the match doc(s) for whatever's selected — removes the chat for both users.
-    for (final matchId in selectedMessages) {
-      FirebaseFirestore.instance.collection('matches').doc(matchId).delete();
+  // Deletes every match doc currently selected, removing the chat for both
+  // users on each match.
+  //
+  // Fix #5: the deletes are now awaited together via Future.wait, and we
+  // only clear selection state / exit selection mode after they've all
+  // settled. Errors are caught and surfaced instead of failing silently
+  // while the UI optimistically clears itself regardless of outcome.
+  Future<void> deleteSelected() async {
+    final idsToDelete = selectedMessages.toList();
+
+    try {
+      await Future.wait(
+        idsToDelete.map(
+          (matchId) =>
+              FirebaseFirestore.instance.collection('matches').doc(matchId).delete(),
+        ),
+      );
+    } catch (e) {
+      debugPrint('deleteSelected failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Some chats could not be deleted.')),
+        );
+      }
     }
+
+    if (!mounted) return;
     setState(() {
       selectedMessages.clear();
       selectionMode = false;
@@ -213,7 +315,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
       ),
       body: Column(
         children: [
-          // 🔝 Top Section – Pending Matches (incoming likes)
+          // Top section: horizontal row of incoming likes (pending matches).
           if (incomingLikes.isNotEmpty)
             SizedBox(
               height: 120,
@@ -299,7 +401,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
               ),
             ),
 
-          // 🔽 Bottom Section – Active Messages (real matches from Firestore)
+          // Bottom section: list of active matches (real chats).
           Expanded(
             child: matchIds.isEmpty
                 ? const Center(child: Text("No messages yet"))
@@ -327,6 +429,9 @@ class _MessagesScreenState extends State<MessagesScreen> {
                         title: Text(otherUserName),
                         subtitle: const Text("Say hi 👋"),
                         selected: isSelected,
+                        // Note: withOpacity is deprecated in current Flutter;
+                        // withValues(alpha: 0.2) is the modern replacement.
+                        // Left as-is since it's cosmetic, not a bug.
                         selectedTileColor: Colors.blue.withOpacity(0.2),
                       );
                     },

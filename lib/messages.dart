@@ -1,9 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class OpenedMessagesScreen extends StatefulWidget {
-  final String user;
+  final String userId;
 
-  const OpenedMessagesScreen({super.key, required this.user});
+  const OpenedMessagesScreen({super.key, required this.userId});
 
   @override
   State<OpenedMessagesScreen> createState() => _OpenedMessagesScreenState();
@@ -11,11 +12,36 @@ class OpenedMessagesScreen extends StatefulWidget {
 
 class _OpenedMessagesScreenState extends State<OpenedMessagesScreen> {
   final TextEditingController _controller = TextEditingController();
+  String? _otherUserName; // null while loading
 
   List<Map<String, dynamic>> messages = [
     {"text": "Hey!", "isMe": false},
     {"text": "You training today?", "isMe": false},
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserName();
+  }
+
+  Future<void> _fetchUserName() async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.userId)
+          .get();
+
+      if (!mounted) return;
+
+      setState(() {
+        _otherUserName = doc.data()?['name'] ?? 'Unknown';
+      });
+    } catch (e) {
+      debugPrint('fetchUserName failed for ${widget.userId}: $e');
+      if (mounted) setState(() => _otherUserName = 'Unknown');
+    }
+  }
 
   void sendMessage() {
     if (_controller.text.trim().isEmpty) return;
@@ -54,7 +80,7 @@ class _OpenedMessagesScreenState extends State<OpenedMessagesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.user),
+        title: Text(_otherUserName ?? 'Unknown'),
       ),
       body: Column(
         children: [

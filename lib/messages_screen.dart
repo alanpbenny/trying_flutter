@@ -256,7 +256,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => OpenedMessagesScreen(user: otherUserId),
+          builder: (context) => OpenedMessagesScreen(userId: otherUserId),
         ),
       );
     }

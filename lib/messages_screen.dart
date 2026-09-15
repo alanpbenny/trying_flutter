@@ -82,23 +82,20 @@ class _MessagesScreenState extends State<MessagesScreen> {
         .doc(myUid)
         .collection('likedUsers')
         .snapshots()
-        .listen(
-          (snapshot) {
-            if (!mounted) return;
+        .listen((snapshot) {
+          if (!mounted) return;
 
-            final users = snapshot.docs
-                .map((doc) => doc['fromUserId'] as String)
-                .toList();
-            setState(() {
-              incomingLikes = users;
-            });
+          final users = snapshot.docs
+              .map((doc) => doc['fromUserId'] as String)
+              .toList();
+          setState(() {
+            incomingLikes = users;
+          });
 
-            for (final uid in users) {
-              fetchUserName(uid);
-            }
-          },
-          onError: (e) => debugPrint('listenToIncomingLikes error: $e'),
-        );
+          for (final uid in users) {
+            fetchUserName(uid);
+          }
+        }, onError: (e) => debugPrint('listenToIncomingLikes error: $e'));
   }
 
   // Listens for match documents that contain the current user, and derives
@@ -111,34 +108,31 @@ class _MessagesScreenState extends State<MessagesScreen> {
         .collection('matches')
         .where('users', arrayContains: myUid)
         .snapshots()
-        .listen(
-          (snapshot) {
-            if (!mounted) return;
+        .listen((snapshot) {
+          if (!mounted) return;
 
-            final matches = <String, String>{};
+          final matches = <String, String>{};
 
-            for (final doc in snapshot.docs) {
-              final users = List<String>.from(doc.data()['users'] ?? []);
-              // The other person is whichever uid in the array isn't me.
-              final otherUserId = users.firstWhere(
-                (id) => id != myUid,
-                orElse: () => '',
-              );
-              if (otherUserId.isEmpty) continue; // shouldn't happen, but guard
+          for (final doc in snapshot.docs) {
+            final users = List<String>.from(doc.data()['users'] ?? []);
+            // The other person is whichever uid in the array isn't me.
+            final otherUserId = users.firstWhere(
+              (id) => id != myUid,
+              orElse: () => '',
+            );
+            if (otherUserId.isEmpty) continue; // shouldn't happen, but guard
 
-              matches[doc.id] = otherUserId;
-            }
+            matches[doc.id] = otherUserId;
+          }
 
-            setState(() {
-              activeMatches = matches;
-            });
+          setState(() {
+            activeMatches = matches;
+          });
 
-            for (final otherUserId in matches.values) {
-              fetchUserName(otherUserId);
-            }
-          },
-          onError: (e) => debugPrint('listenToActiveMatches error: $e'),
-        );
+          for (final otherUserId in matches.values) {
+            fetchUserName(otherUserId);
+          }
+        }, onError: (e) => debugPrint('listenToActiveMatches error: $e'));
   }
 
   // Opens the full profile screen for someone who liked you, and applies
@@ -256,7 +250,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => OpenedMessagesScreen(userId: otherUserId),
+          builder: (context) =>
+              OpenedMessagesScreen(matchId: matchId, userId: otherUserId),
         ),
       );
     }
@@ -271,13 +266,43 @@ class _MessagesScreenState extends State<MessagesScreen> {
   // while the UI optimistically clears itself regardless of outcome.
   Future<void> deleteSelected() async {
     final idsToDelete = selectedMessages.toList();
+    final myUid = user?.uid;
+    final db = FirebaseFirestore.instance;
 
     try {
       await Future.wait(
-        idsToDelete.map(
-          (matchId) =>
-              FirebaseFirestore.instance.collection('matches').doc(matchId).delete(),
-        ),
+        idsToDelete.map((matchId) async {
+          final otherUserId = activeMatches[matchId];
+          final matchRef = db.collection('matches').doc(matchId);
+
+          // Messages don't get deleted automatically when the parent doc
+          // does — clear the subcollection first so a future re-match at
+          // this same deterministic matchId doesn't inherit old messages.
+          final messagesSnapshot = await matchRef.collection('messages').get();
+
+          final batch = db.batch();
+          for (final doc in messagesSnapshot.docs) {
+            batch.delete(doc.reference);
+          }
+          batch.delete(matchRef);
+
+          if (myUid != null) {
+            batch.update(db.collection('users').doc(myUid), {
+              'seenUsers': FieldValue.arrayRemove([otherUserId]),
+            });
+          }
+          await batch.commit();
+
+          if (myUid != null && otherUserId != null) {
+            try {
+              await db.collection('users').doc(otherUserId).update({
+                'seenUsers': FieldValue.arrayRemove([myUid]),
+              });
+            } catch (e) {
+              debugPrint('Could not clear seenUsers on other user: $e');
+            }
+          }
+        }),
       );
     } catch (e) {
       debugPrint('deleteSelected failed: $e');

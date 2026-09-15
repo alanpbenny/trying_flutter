@@ -172,6 +172,8 @@ class _SwipeScreenState extends State<SwipeScreen> {
                 onDismissed: (direction) async {
                   if (direction == DismissDirection.startToEnd) {
                     debugPrint("Liked ${user.name}");
+                    await liked(user);
+
                   } else {
                     debugPrint("Passed ${user.name}");
                   }

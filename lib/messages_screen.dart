@@ -23,6 +23,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
 
   // matchId -> other user's uid, populated live from Firestore.
   Map<String, String> activeMatches = {};
+  Map<String, String?> lastMessages = {};
+  Map<String, String?> lastMessageSenders = {};
 
   // Fix #1: hold onto the stream subscriptions so we can cancel them in
   // dispose(). Without this, both listeners keep firing after the user
@@ -66,6 +68,13 @@ class _MessagesScreenState extends State<MessagesScreen> {
     _likesSub?.cancel();
     _matchesSub?.cancel();
     super.dispose();
+  }
+
+  String _previewText(String matchId) {
+    final text = lastMessages[matchId];
+    if (text == null || text.isEmpty) return 'Say hi 👋';
+    final isMine = lastMessageSenders[matchId] == user?.uid;
+    return isMine ? 'You: $text' : text;
   }
 
   // Listens for people who have liked the current user (the "likedUsers"
@@ -112,21 +121,28 @@ class _MessagesScreenState extends State<MessagesScreen> {
           if (!mounted) return;
 
           final matches = <String, String>{};
+          final newLastMessages = <String, String?>{};
+          final newLastMessageSenders = <String, String?>{};
 
           for (final doc in snapshot.docs) {
-            final users = List<String>.from(doc.data()['users'] ?? []);
-            // The other person is whichever uid in the array isn't me.
+            final data = doc.data();
+            final users = List<String>.from(data['users'] ?? []);
             final otherUserId = users.firstWhere(
               (id) => id != myUid,
               orElse: () => '',
             );
-            if (otherUserId.isEmpty) continue; // shouldn't happen, but guard
+            if (otherUserId.isEmpty) continue;
 
             matches[doc.id] = otherUserId;
+            newLastMessages[doc.id] = data['lastMessage'] as String?;
+            newLastMessageSenders[doc.id] =
+                data['lastMessageSenderId'] as String?;
           }
 
           setState(() {
             activeMatches = matches;
+            lastMessages = newLastMessages;
+            lastMessageSenders = newLastMessageSenders;
           });
 
           for (final otherUserId in matches.values) {
@@ -452,7 +468,11 @@ class _MessagesScreenState extends State<MessagesScreen> {
                               : null,
                         ),
                         title: Text(otherUserName),
-                        subtitle: const Text("Say hi 👋"),
+                        subtitle: Text(
+                          _previewText(matchId),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                         selected: isSelected,
                         // Note: withOpacity is deprecated in current Flutter;
                         // withValues(alpha: 0.2) is the modern replacement.

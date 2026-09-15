@@ -52,12 +52,24 @@ class _OpenedMessagesScreenState extends State<OpenedMessagesScreen> {
     if (text.isEmpty || myUid == null) return;
 
     _controller.clear();
+    final db = FirebaseFirestore.instance;
+    final matchRef = db.collection('matches').doc(widget.matchId);
+    final messageRef = matchRef.collection('messages').doc();
+
+    final batch = db.batch();
+    batch.set(messageRef, {
+      'senderId': myUid,
+      'text': text,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+    batch.update(matchRef, {
+      'lastMessage': text,
+      'lastMessageSenderId': myUid,
+      'lastMessageAt': FieldValue.serverTimestamp(),
+    });
+
     try {
-      await _messagesRef.add({
-        'senderId': myUid,
-        'text': text,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
+      await batch.commit();
     } catch (e) {
       debugPrint('sendMessage failed: $e');
       if (mounted) {
@@ -78,7 +90,10 @@ class _OpenedMessagesScreenState extends State<OpenedMessagesScreen> {
           color: isMe ? Colors.blue : Colors.grey[300],
           borderRadius: BorderRadius.circular(16),
         ),
-        child: Text(text, style: TextStyle(color: isMe ? Colors.white : Colors.black)),
+        child: Text(
+          text,
+          style: TextStyle(color: isMe ? Colors.white : Colors.black),
+        ),
       ),
     );
   }
@@ -91,7 +106,9 @@ class _OpenedMessagesScreenState extends State<OpenedMessagesScreen> {
         children: [
           Expanded(
             child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-              stream: _messagesRef.orderBy('createdAt', descending: true).snapshots(),
+              stream: _messagesRef
+                  .orderBy('createdAt', descending: true)
+                  .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return const Center(child: Text('Could not load messages.'));
@@ -108,7 +125,10 @@ class _OpenedMessagesScreenState extends State<OpenedMessagesScreen> {
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
                     final data = docs[index].data();
-                    return buildMessageBubble(data['text'] ?? '', data['senderId'] == myUid);
+                    return buildMessageBubble(
+                      data['text'] ?? '',
+                      data['senderId'] == myUid,
+                    );
                   },
                 );
               },
@@ -131,7 +151,10 @@ class _OpenedMessagesScreenState extends State<OpenedMessagesScreen> {
                       onSubmitted: (_) => sendMessage(),
                     ),
                   ),
-                  IconButton(icon: const Icon(Icons.send), onPressed: sendMessage),
+                  IconButton(
+                    icon: const Icon(Icons.send),
+                    onPressed: sendMessage,
+                  ),
                 ],
               ),
             ),

@@ -5,9 +5,6 @@ import 'profile_setup_screen.dart';
 import 'settings.dart';
 import 'package:trying_flutter/services/user_service.dart';
 
-//currentUser = UserModel();
-bool _photoFailed = false;
-
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -16,6 +13,8 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  bool _photoFailed = false;
+
   @override
   void initState() {
     super.initState();
@@ -24,23 +23,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadUser() async {
     await UserService.loadCurrentUser();
-    debugPrint("After load: ${UserService.currentUser?.name}"); // ADD THIS
-    debugPrint("After load: ${UserService.currentUser?.age}"); // ADD THIS
-
-    debugPrint("After load: ${UserService.currentUser?.goal}"); // ADD THIS
-
-    debugPrint("After load: ${UserService.currentUser?.gym}"); // ADD THIS
-
-    debugPrint("After load: ${UserService.currentUser?.frequency}"); // ADD THIS
+    debugPrint("After load: ${UserService.currentUser?.name}");
+    debugPrint("After load: ${UserService.currentUser?.age}");
+    debugPrint("After load: ${UserService.currentUser?.goal}");
+    debugPrint("After load: ${UserService.currentUser?.gym}");
+    debugPrint("After load: ${UserService.currentUser?.frequency}");
 
     if (mounted) setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    //final currentUser = UserService.currentUser;
     final user = UserService.currentUser;
     debugPrint("Current User in ProfileScreen: ${user?.name}");
+    final hasPhoto = user?.photoUrl != null && !_photoFailed;
 
     return Scaffold(
       appBar: AppBar(title: const Text("My Profile"), centerTitle: true),
@@ -52,14 +48,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Center(
               child: CircleAvatar(
                 radius: 80,
-                backgroundImage: user?.photoUrl != null
+                backgroundImage: hasPhoto
                     ? NetworkImage(user!.photoUrl!)
                     : null,
-                onBackgroundImageError: (exception, stackTrace) {
-                  debugPrint("Failed to load profile image: $exception");
-                  if (mounted) setState(() => _photoFailed = true);
-                },
-                child: user?.photoUrl == null
+                onBackgroundImageError: hasPhoto
+                    ? (exception, stackTrace) {
+                        debugPrint("Failed to load profile image: $exception");
+                        if (mounted) setState(() => _photoFailed = true);
+                      }
+                    : null,
+                child: !hasPhoto
                     ? const Icon(Icons.person, size: 80)
                     : null,
               ),
@@ -70,7 +68,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: TextStyle(fontSize: 28),
               ),
             ),
-            //Spacer(),
             Center(
               child: ElevatedButton(
                 onPressed: () {
@@ -87,13 +84,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             const SizedBox(height: 24),
 
-            //const Text("Name: Alex", style: TextStyle(fontSize: 18)),
             Center(
               child: Column(
-                mainAxisSize: MainAxisSize.min, // prevents taking full height
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text("${user?.gym}", style: TextStyle(fontSize: 18)),
-                  // ignore: unnecessary_string_interpolations
                   Text("${user?.goal}", style: TextStyle(fontSize: 18)),
                   Text("${user?.frequency}", style: TextStyle(fontSize: 18)),
                 ],

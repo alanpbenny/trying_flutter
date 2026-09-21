@@ -34,7 +34,7 @@ class SettingsScreen extends StatelessWidget {
                 builder: (context) => AlertDialog(
                   title: const Text("Delete Account"),
                   content: const Text(
-                    "Are you sure you want to delete your account?",
+                    "This permanently deletes your profile, matches, and messages. This can't be undone. Are you sure?",
                   ),
                   actions: [
                     TextButton(
@@ -42,9 +42,35 @@ class SettingsScreen extends StatelessWidget {
                       child: const Text("Cancel"),
                     ),
                     TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        // TODO: Delete account logic
+                      onPressed: () async {
+                        // Captured once, before any await. This stays valid
+                        // even if AuthGate swaps LoginScreen in underneath
+                        // us mid-flight (user.delete() signs the user out,
+                        // which triggers that swap) — unlike `context`,
+                        // which can go stale the moment that happens.
+                        final navigator = Navigator.of(
+                          context,
+                          rootNavigator: true,
+                        );
+                        navigator.pop(); // close confirmation dialog
+
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (_) =>
+                              const Center(child: CircularProgressIndicator()),
+                        );
+
+                        bool success = false;
+                        try {
+                          success = await AuthService().deleteAccount(context);
+                        } finally {
+                          navigator.pop(); // close loading spinner
+                        }
+
+                        if (success) {
+                          navigator.popUntil((route) => route.isFirst);
+                        }
                       },
                       child: const Text("Delete"),
                     ),
@@ -105,12 +131,10 @@ class SettingsScreen extends StatelessWidget {
           const Divider(),
 
           // 🔹 Logout Button
-           ListTile(
+          ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),
             title: const Text("Logout", style: TextStyle(color: Colors.red)),
             onTap: () async {
-              // TODO: Firebase signOut()
-             // Navigator.pop(context);
               await AuthService().signOut();
               debugPrint("Logged out");
               Navigator.of(context).popUntil((route) => route.isFirst);

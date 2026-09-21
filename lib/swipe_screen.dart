@@ -99,18 +99,22 @@ class _SwipeScreenState extends State<SwipeScreen> {
   }
 
   Future<void> liked(UserModel user) async {
-    debugPrint("Like function called");
+  debugPrint("Like function called");
+  final db = FirebaseFirestore.instance;
+  final batch = db.batch();
 
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.id)
-        .collection('likedUsers') // subcollection
-        .doc(currentUserId)
-        .set({
-          'fromUserId': currentUserId,
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-  }
+  batch.set(
+    db.collection('users').doc(user.id).collection('likedUsers').doc(currentUserId),
+    {'fromUserId': currentUserId, 'createdAt': FieldValue.serverTimestamp()},
+  );
+
+  batch.set(
+    db.collection('users').doc(currentUserId).collection('sentLikes').doc(user.id),
+    {'createdAt': FieldValue.serverTimestamp()},
+  );
+
+  await batch.commit();
+}
 
   void removeTopUser() {
     if (users.isEmpty) return;

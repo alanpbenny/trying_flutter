@@ -57,9 +57,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         if (mounted) setState(() => _photoFailed = true);
                       }
                     : null,
-                child: !hasPhoto
-                    ? const Icon(Icons.person, size: 80)
-                    : null,
+                child: !hasPhoto ? const Icon(Icons.person, size: 80) : null,
               ),
             ),
             Center(
@@ -70,13 +68,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             Center(
               child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
+                onPressed: () async {
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const ProfileSetupScreen(),
+                      builder: (context) =>
+                          const ProfileSetupScreen(isEditing: true),
                     ),
                   );
+                  if (mounted) setState(() {}); // pick up whatever changed
                 },
                 child: const Text("Edit Profile"),
               ),

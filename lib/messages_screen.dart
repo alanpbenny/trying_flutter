@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:trying_flutter/models/user_model.dart';
 import 'messages.dart';
 import 'altOtherProfileScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -216,6 +217,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
         );
       }
     }
+
+
   }
 
   // Declines an incoming like: just removes it, no match doc is created.
@@ -271,6 +274,18 @@ class _MessagesScreenState extends State<MessagesScreen> {
         ),
       );
     }
+  }
+
+
+  Future<void> seen(UserModel user) async {
+    debugPrint("Seen function called");
+
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.id)
+        .update({
+          'seenUsers': FieldValue.arrayUnion([user.id]),
+        });
   }
 
   // Deletes every match doc currently selected, removing the chat for both
@@ -349,7 +364,37 @@ class _MessagesScreenState extends State<MessagesScreen> {
             ? [
                 IconButton(
                   icon: const Icon(Icons.delete),
-                  onPressed: deleteSelected,
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: Text(
+                          selectedMessages.length == 1
+                              ? "Unmatch?"
+                              : "Unmatch ${selectedMessages.length} people?",
+                        ),
+                        content: const Text(
+                          "This deletes the chat history and lets you match with them again in the future. This can't be undone.",
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text("Cancel"),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              deleteSelected();
+                            },
+                            child: const Text(
+                              "Unmatch",
+                              style: TextStyle(color: Colors.red),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
               ]
             : [],

@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class UserModel {
   final String id;
   final String name;
@@ -6,7 +8,7 @@ class UserModel {
   final String goal;
   final String frequency;
   final String? photoUrl;
-
+  final DateTime? dob;
 
   UserModel({
     required this.id,
@@ -15,7 +17,8 @@ class UserModel {
     required this.gym,
     required this.goal,
     required this.frequency,
-    this.photoUrl
+    this.photoUrl,
+    this.dob,
   });
 
   factory UserModel.fromFirestore(Map<String, dynamic> data, String id) {
@@ -27,9 +30,7 @@ class UserModel {
       goal: data['goal'] ?? '',
       frequency: data['frequency'] ?? '',
       photoUrl: data['photoUrl'],
-
-
-
+      dob: data['dob'] != null ? (data['dob'] as Timestamp).toDate() : null,
     );
   }
 }

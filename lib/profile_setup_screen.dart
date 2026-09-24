@@ -1,14 +1,16 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-//import 'package:supabase_flutter/supabase_flutter.dart';
 import 'home_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/user_service.dart';
+
 class ProfileSetupScreen extends StatefulWidget {
-  const ProfileSetupScreen({super.key});
+  final bool isEditing;
+
+  const ProfileSetupScreen({super.key, this.isEditing = false});
 
   @override
   State<ProfileSetupScreen> createState() => _ProfileSetupScreenState();
@@ -24,6 +26,28 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
   Uint8List? _pickedImageBytes;
   bool _isUploadingPhoto = false;
+
+  DateTime? selectedDOB;
+
+  // Set from the existing profile when editing. Used as fallbacks so an
+  // edit doesn't force re-entering data that's already on file.
+  int? _existingAge;
+  String? _existingPhotoUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    final current = UserService.currentUser;
+    if (current != null) {
+      nameController.text = current.name;
+      if (current.gym.isNotEmpty) selectedGym = current.gym;
+      if (current.goal.isNotEmpty) selectedGoal = current.goal;
+      if (current.frequency.isNotEmpty) selectedFrequency = current.frequency;
+      selectedDOB = current.dob; // null for accounts created before dob was tracked
+      _existingAge = current.age;
+      _existingPhotoUrl = current.photoUrl;
+    }
+  }
 
   Future<void> pickProfilePhoto() async {
     final picker = ImagePicker();
@@ -42,7 +66,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   }
 
   /// Uploads the picked photo (if any) to Firebase Storage and returns its
-  /// download URL. Returns null if the user never picked a photo.
+  /// download URL. Returns null if the user never picked a new photo.
   Future<String?> _uploadProfilePhotoIfNeeded(String uid) async {
     if (_pickedImageBytes == null) return null;
 
@@ -63,43 +87,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       if (mounted) setState(() => _isUploadingPhoto = false);
     }
   }
-  /*
-  Future<void> _saveProfile() async {
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user == null) return;
-
-    setState(() => _isLoading = true);
-    try {
-      await SupabaseService.updateProfile(
-        userId: user.id,
-        name: nameController.text.trim(),
-        gym: gymController.text.trim(),
-        goal: selectedGoal,
-        frequency: selectedFrequency,
-      );
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-        );
-      }
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error saving profile'), backgroundColor: Colors.red),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-  */
-  DateTime? selectedDOB;
 
   Future<void> pickDOB() async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime(2000),
+      initialDate: selectedDOB ?? DateTime(2000),
       firstDate: DateTime(1950),
       lastDate: DateTime.now(),
     );
@@ -124,14 +116,24 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   }
 
   void handleContinue() async {
-    if (nameController.text.trim().isEmpty || selectedDOB == null) {
+    if (nameController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please fill all required fields")),
+        const SnackBar(content: Text("Please enter your name")),
       );
       return;
     }
 
-    final age = calculateAge(selectedDOB!);
+    // Accounts created before dob was tracked won't have one to fall back
+    // on — for those, only force a DOB pick on first-time setup, not on
+    // every edit of an otherwise-complete profile.
+    if (selectedDOB == null && _existingAge == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please select your date of birth")),
+      );
+      return;
+    }
+
+    final age = selectedDOB != null ? calculateAge(selectedDOB!) : _existingAge!;
 
     if (age < 16) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -140,20 +142,13 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       return;
     }
 
-    debugPrint("Name: ${nameController.text}");
-    debugPrint("Gym: $selectedGym");
-    debugPrint("Goal: $selectedGoal");
-    debugPrint("Frequency: $selectedFrequency");
-    debugPrint("DOB: $selectedDOB");
-    debugPrint("Age: $age");
-
     setState(() => _isLoading = true);
 
     String uid = FirebaseAuth.instance.currentUser!.uid;
 
-  String? photoUrl;
+    String? newPhotoUrl;
     try {
-      photoUrl = await _uploadProfilePhotoIfNeeded(uid);
+      newPhotoUrl = await _uploadProfilePhotoIfNeeded(uid);
     } catch (e) {
       debugPrint("Photo upload failed: $e");
       if (mounted) {
@@ -166,33 +161,58 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       }
     }
 
-    await FirebaseFirestore.instance.collection('users').doc(uid).set({
+    final data = <String, dynamic>{
       'name': nameController.text.trim(),
       'gym': selectedGym,
-      'goal': selectedGoal, // ✅ consistent
-      'frequency': selectedFrequency, // ✅ consistent
-      'age': age, // ✅ int, NOT string
+      'goal': selectedGoal,
+      'frequency': selectedFrequency,
+      'age': age,
       'onboardingComplete': true,
-      'seenUsers': [], // 👈 ADD THIS
-      'likedUsers': [],
-      if (photoUrl != null) 'photoUrl': photoUrl,
-    });
+    };
+
+    if (selectedDOB != null) {
+      data['dob'] = Timestamp.fromDate(selectedDOB!);
+    }
+
+    // Always resolve to *something* if a photo exists — either the newly
+    // uploaded one or whatever was already there. Never omit this key
+    // when a photo exists; with merge:true that's harmless either way,
+    // but being explicit avoids relying on that safety net.
+    final resolvedPhotoUrl = newPhotoUrl ?? _existingPhotoUrl;
+    if (resolvedPhotoUrl != null) {
+      data['photoUrl'] = resolvedPhotoUrl;
+    }
+
+    // merge:true means fields not included here — notably seenUsers and
+    // likedUsers, which this screen has no business touching — are left
+    // exactly as they were, instead of being wiped back to empty arrays.
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .set(data, SetOptions(merge: true));
 
     await UserService.loadCurrentUser();
 
-    if (mounted) setState(() => _isLoading = false);
+    if (!mounted) return;
+    setState(() => _isLoading = false);
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const HomeScreen()),
-    );
+    if (widget.isEditing) {
+      Navigator.pop(context);
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final hasExistingPhoto = _pickedImageBytes == null && _existingPhotoUrl != null;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Please fill in basic information"),
+        title: Text(widget.isEditing ? "Edit Profile" : "Please fill in basic information"),
         centerTitle: true,
         backgroundColor: Colors.deepPurple[200],
       ),
@@ -201,7 +221,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 🔵 Profile Picture
             Center(
               child: GestureDetector(
                 onTap: pickProfilePhoto,
@@ -218,14 +237,15 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                                 image: MemoryImage(_pickedImageBytes!),
                                 fit: BoxFit.cover,
                               )
-                            : null,
+                            : hasExistingPhoto
+                                ? DecorationImage(
+                                    image: NetworkImage(_existingPhotoUrl!),
+                                    fit: BoxFit.cover,
+                                  )
+                                : null,
                       ),
-                      child: _pickedImageBytes == null
-                          ? const Icon(
-                              Icons.person,
-                              size: 80,
-                              color: Colors.white,
-                            )
+                      child: (_pickedImageBytes == null && !hasExistingPhoto)
+                          ? const Icon(Icons.person, size: 80, color: Colors.white)
                           : null,
                     ),
                     if (_isUploadingPhoto)
@@ -251,11 +271,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                             color: Colors.blue,
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(
-                            Icons.add,
-                            size: 40,
-                            color: Colors.white,
-                          ),
+                          child: const Icon(Icons.add, size: 40, color: Colors.white),
                         ),
                       ),
                     ),
@@ -279,7 +295,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
             const SizedBox(height: 24),
 
-            // Name
             TextField(
               controller: nameController,
               decoration: const InputDecoration(labelText: "Name"),
@@ -287,7 +302,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
             const SizedBox(height: 16),
 
-            // DOB Picker
             GestureDetector(
               onTap: pickDOB,
               child: InputDecorator(
@@ -297,7 +311,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 ),
                 child: Text(
                   selectedDOB == null
-                      ? "Select your date of birth"
+                      ? (_existingAge != null
+                          ? "Not set — tap to add"
+                          : "Select your date of birth")
                       : "${selectedDOB!.day.toString().padLeft(2, '0')}/"
                             "${selectedDOB!.month.toString().padLeft(2, '0')}/"
                             "${selectedDOB!.year}",
@@ -310,7 +326,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
             const SizedBox(height: 16),
 
-            // Gym dropdown
             DropdownButtonFormField<String>(
               initialValue: selectedGym,
               decoration: const InputDecoration(labelText: "Gym name"),
@@ -329,24 +344,14 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
             const SizedBox(height: 16),
 
-            // Goal dropdown
             DropdownButtonFormField<String>(
               initialValue: selectedGoal,
               decoration: const InputDecoration(labelText: "Fitness Goal"),
               items: const [
-                DropdownMenuItem(
-                  value: 'Muscle Gain',
-                  child: Text('Muscle Gain'),
-                ),
-                DropdownMenuItem(
-                  value: 'Weight Loss',
-                  child: Text('Weight Loss'),
-                ),
+                DropdownMenuItem(value: 'Muscle Gain', child: Text('Muscle Gain')),
+                DropdownMenuItem(value: 'Weight Loss', child: Text('Weight Loss')),
                 DropdownMenuItem(value: 'Cardio', child: Text('Cardio')),
-                DropdownMenuItem(
-                  value: 'General Fitness',
-                  child: Text('General Fitness'),
-                ),
+                DropdownMenuItem(value: 'General Fitness', child: Text('General Fitness')),
               ],
               onChanged: (value) {
                 setState(() {
@@ -357,23 +362,13 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
             const SizedBox(height: 16),
 
-            // Frequency dropdown
             DropdownButtonFormField<String>(
               initialValue: selectedFrequency,
               decoration: const InputDecoration(labelText: "Workout Frequency"),
               items: const [
-                DropdownMenuItem(
-                  value: '1-2 times/week',
-                  child: Text('1-2 times/week'),
-                ),
-                DropdownMenuItem(
-                  value: '3-4 times/week',
-                  child: Text('3-4 times/week'),
-                ),
-                DropdownMenuItem(
-                  value: '5+ times/week',
-                  child: Text('5+ times/week'),
-                ),
+                DropdownMenuItem(value: '1-2 times/week', child: Text('1-2 times/week')),
+                DropdownMenuItem(value: '3-4 times/week', child: Text('3-4 times/week')),
+                DropdownMenuItem(value: '5+ times/week', child: Text('5+ times/week')),
               ],
               onChanged: (value) {
                 setState(() {
@@ -390,12 +385,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   ? const SizedBox(
                       height: 20,
                       width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                     )
-                  : const Text("Continue"),
+                  : Text(widget.isEditing ? "Save" : "Continue"),
             ),
           ],
         ),

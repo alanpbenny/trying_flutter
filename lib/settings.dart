@@ -1,8 +1,71 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:trying_flutter/services/auth_service.dart';
+import 'profile_setup_screen.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  bool _notificationsEnabled = true;
+  bool _loadingPreference = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotificationPreference();
+  }
+
+  Future<void> _loadNotificationPreference() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      if (mounted) setState(() => _loadingPreference = false);
+      return;
+    }
+
+    try {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      if (mounted) {
+        setState(() {
+          // Defaults to true if the field has never been set (e.g. accounts
+          // created before this toggle existed).
+          _notificationsEnabled = doc.data()?['notificationsEnabled'] ?? true;
+          _loadingPreference = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Failed to load notification preference: $e');
+      if (mounted) setState(() => _loadingPreference = false);
+    }
+  }
+
+  Future<void> _setNotificationsEnabled(bool val) async {
+    final previous = _notificationsEnabled;
+    setState(() => _notificationsEnabled = val); // optimistic UI update
+
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .set({'notificationsEnabled': val}, SetOptions(merge: true));
+    } catch (e) {
+      debugPrint('Failed to save notification preference: $e');
+      if (mounted) {
+        setState(() => _notificationsEnabled = previous); // revert on failure
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Couldn't save that — try again.")),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +85,12 @@ class SettingsScreen extends StatelessWidget {
             leading: const Icon(Icons.person),
             title: const Text("Edit Profile"),
             onTap: () {
-              // TODO: Navigate to profile edit screen
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ProfileSetupScreen(isEditing: true),
+                ),
+              );
             },
           ),
           ListTile(
@@ -43,11 +111,6 @@ class SettingsScreen extends StatelessWidget {
                     ),
                     TextButton(
                       onPressed: () async {
-                        // Captured once, before any await. This stays valid
-                        // even if AuthGate swaps LoginScreen in underneath
-                        // us mid-flight (user.delete() signs the user out,
-                        // which triggers that swap) — unlike `context`,
-                        // which can go stale the moment that happens.
                         final navigator = Navigator.of(
                           context,
                           rootNavigator: true,
@@ -92,10 +155,8 @@ class SettingsScreen extends StatelessWidget {
           ),
           SwitchListTile(
             title: const Text("Push Notifications"),
-            value: true,
-            onChanged: (val) {
-              // TODO: Toggle notifications
-            },
+            value: _notificationsEnabled,
+            onChanged: _loadingPreference ? null : _setNotificationsEnabled,
           ),
 
           const Divider(),

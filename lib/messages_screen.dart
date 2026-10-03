@@ -218,7 +218,13 @@ class _MessagesScreenState extends State<MessagesScreen> {
       }
     }
 
-
+    try {
+      await db.collection('users').doc(myUid).update({
+        'seenUsers': FieldValue.arrayUnion([otherUserId]),
+      });
+    } catch (e) {
+      debugPrint('Could not clear seenUsers on other user: $e');
+    }
   }
 
   // Declines an incoming like: just removes it, no match doc is created.
@@ -274,18 +280,6 @@ class _MessagesScreenState extends State<MessagesScreen> {
         ),
       );
     }
-  }
-
-
-  Future<void> seen(UserModel user) async {
-    debugPrint("Seen function called");
-
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.id)
-        .update({
-          'seenUsers': FieldValue.arrayUnion([user.id]),
-        });
   }
 
   // Deletes every match doc currently selected, removing the chat for both
